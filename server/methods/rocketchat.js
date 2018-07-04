@@ -80,6 +80,11 @@ const  getDepartments = function(){
 Meteor.methods({
     syncDepartment: function(queue, queueUsers){
         var user = Meteor.user();
-        req
+        requestOptions.headers = {
+            'X-Auth-Token': user.services.password.bcrypt,
+            'X-User-Id': user._id
+        };
+
+        
     }
 });
