@@ -59,7 +59,6 @@ NotifyErrors.notify = function(type, message, options) {
 
 	options.groupingHash = options.errorName + message.message;
 
-	// Kadira.trackError type, message.message, stacks: message.stack
 	return bugsnag.notify(message, options);
 };
 

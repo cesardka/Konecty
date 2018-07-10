@@ -12,30 +12,15 @@ accessUtils.getFieldConditions = function(metaAccess, fieldName) {
 
 	const conditions = {};
 
-	if (
-		__guard__(
-			accessField != null ? accessField.UPDATE : undefined,
-			x => x.condition
-		) != null
-	) {
+	if (__guard__(accessField != null ? accessField.UPDATE : undefined, x => x.condition) != null) {
 		conditions.UPDATE = accessField.UPDATE.condition;
 	}
 
-	if (
-		__guard__(
-			accessField != null ? accessField.CREATE : undefined,
-			x1 => x1.condition
-		) != null
-	) {
+	if (__guard__(accessField != null ? accessField.CREATE : undefined, x1 => x1.condition) != null) {
 		conditions.CREATE = accessField.CREATE.condition;
 	}
 
-	if (
-		__guard__(
-			accessField != null ? accessField.READ : undefined,
-			x2 => x2.condition
-		) != null
-	) {
+	if (__guard__(accessField != null ? accessField.READ : undefined, x2 => x2.condition) != null) {
 		conditions.READ = accessField.READ.condition;
 	}
 
@@ -52,34 +37,19 @@ accessUtils.getFieldPermissions = function(metaAccess, fieldName) {
 		isReadable: true
 	};
 
-	if (
-		__guard__(
-			accessField != null ? accessField.UPDATE : undefined,
-			x => x.allow
-		) != null
-	) {
+	if (__guard__(accessField != null ? accessField.UPDATE : undefined, x => x.allow) != null) {
 		access.isUpdatable = accessField.UPDATE.allow === true;
 	} else {
 		access.isUpdatable = metaAccess.fieldDefaults.isUpdatable === true;
 	}
 
-	if (
-		__guard__(
-			accessField != null ? accessField.CREATE : undefined,
-			x1 => x1.allow
-		) != null
-	) {
+	if (__guard__(accessField != null ? accessField.CREATE : undefined, x1 => x1.allow) != null) {
 		access.isCreatable = accessField.CREATE.allow === true;
 	} else {
 		access.isCreatable = metaAccess.fieldDefaults.isCreatable === true;
 	}
 
-	if (
-		__guard__(
-			accessField != null ? accessField.READ : undefined,
-			x2 => x2.allow
-		) != null
-	) {
+	if (__guard__(accessField != null ? accessField.READ : undefined, x2 => x2.allow) != null) {
 		access.isReadable = accessField.READ.allow === true;
 	} else {
 		access.isReadable = metaAccess.fieldDefaults.isReadable === true;
@@ -108,17 +78,18 @@ accessUtils.getFieldPermissions = function(metaAccess, fieldName) {
 
 accessUtils.getAccessFor = function(documentName, user) {
 	// If user has no access defined set access as defaults: 'Default'
-	if (user.access == null || user.access === null) {
-		user.access = { defaults: 'Default' };
+	if ((user.access == null) || (user.access === null)) {
+		user.access =
+			{defaults: 'Default'};
 	}
 
 	// If user has no default access set as 'Default'
-	if (user.access.defaults == null || user.access.defaults === null) {
+	if ((user.access.defaults == null) || (user.access.defaults === null)) {
 		user.access.defaults = 'Default';
 	}
 
 	// If user has not access for Document Name set as defaults
-	if (user.access[documentName] == null || user.access[documentName] === null) {
+	if ((user.access[documentName] == null) || (user.access[documentName] === null)) {
 		user.access[documentName] = user.access.defaults;
 	}
 
@@ -174,7 +145,5 @@ accessUtils.removeUnauthorizedDataForRead = function(metaAccess, data) {
 	return data;
 };
 function __guard__(value, transform) {
-	return typeof value !== 'undefined' && value !== null
-		? transform(value)
-		: undefined;
+  return (typeof value !== 'undefined' && value !== null) ? transform(value) : undefined;
 }

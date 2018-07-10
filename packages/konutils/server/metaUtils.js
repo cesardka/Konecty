@@ -12,76 +12,38 @@ const crypto = require('crypto');
 
 metaUtils = {};
 
-metaUtils.validateAndProcessValueFor = function(
-	meta,
-	fieldName,
-	value,
-	actionType,
-	model,
-	objectOriginalValues,
-	objectNewValues,
-	idsToUpdate
-) {
+metaUtils.validateAndProcessValueFor = function(meta, fieldName, value, actionType, model, objectOriginalValues, objectNewValues, idsToUpdate) {
 	let query;
 	const field = meta.fields[fieldName];
 
-	if (field == null) {
-		return new Meteor.Error(
-			'utils-internal-error',
-			`Field ${fieldName} does not exists on ${meta._id}`
-		);
+	if ((field == null)) {
+		return new Meteor.Error('utils-internal-error', `Field ${fieldName} does not exists on ${meta._id}`);
 	}
 
 	// Validate required fields
-	if (field.isRequired === true && value == null) {
-		return new Meteor.Error(
-			'utils-internal-error',
-			`O Campo '${fieldName}' é obrigatório, mas não está presente no dado.`,
-			{
-				meta,
-				fieldName,
-				value,
-				actionType,
-				model,
-				objectOriginalValues,
-				objectNewValues,
-				idsToUpdate
-			}
-		);
+	if ((field.isRequired === true) && (value == null)) {
+		return new Meteor.Error('utils-internal-error', `O Campo '${fieldName}' é obrigatório, mas não está presente no dado.`, { meta, fieldName, value, actionType, model, objectOriginalValues, objectNewValues, idsToUpdate });
 	}
 
 	// Validate List fields
 	if (field.isList === true) {
-		if (field.maxElements != null && field.maxElements > 0) {
-			if (!_.isArray(value) || value.length > field.maxElements) {
-				return new Meteor.Error(
-					'utils-internal-error',
-					`Value for field ${fieldName} must be array with the maximum of ${
-						field.maxElements
-					} item(s)`
-				);
+		if ((field.maxElements != null) && (field.maxElements > 0)) {
+			if (!_.isArray(value) || (value.length > field.maxElements)) {
+				return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be array with the maximum of ${field.maxElements} item(s)`);
 			}
 		}
 
-		if (field.minElements != null && field.minElements > 0) {
-			if (!_.isArray(value) || value.length < field.minElements) {
-				return new Meteor.Error(
-					'utils-internal-error',
-					`Value for field ${fieldName} must be array with at least ${
-						field.minElements
-					} item(s)`
-				);
+		if ((field.minElements != null) && (field.minElements > 0)) {
+			if (!_.isArray(value) || (value.length < field.minElements)) {
+				return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be array with at least ${field.minElements} item(s)`);
 			}
 		}
 
-		if (field.isAllowDuplicates === false && _.isArray(value)) {
+		if ((field.isAllowDuplicates === false) && _.isArray(value)) {
 			for (let itemA of Array.from(value)) {
 				for (let itemB of Array.from(value)) {
 					if (utils.deepEqual(itemA, itemB) === true) {
-						return new Meteor.Error(
-							'utils-internal-error',
-							`Value for field ${fieldName} must be array no duplicated values`
-						);
+						return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be array no duplicated values`);
 					}
 				}
 			}
@@ -92,43 +54,37 @@ metaUtils.validateAndProcessValueFor = function(
 	if (field.type === 'picklist') {
 		if (_.isNumber(field.minSelected)) {
 			if (field.minSelected === 1) {
-				if (value == null || (_.isArray(value) && value.length === 0)) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`A lista de escolha '${fieldName}' exige o mínimo de 1 valores selecionados. Mas não está presente no dado.`
-					);
+				if ((value == null) || (_.isArray(value) && (value.length === 0))) {
+					return new Meteor.Error('utils-internal-error', `A lista de escolha '${fieldName}' exige o mínimo de 1 valores selecionados. Mas não está presente no dado.`);
 				}
 			}
 		}
 	}
 
-	if (actionType === 'update' && value == null && field.type === 'lookup') {
+	if ((actionType === 'update') && (value == null) && (field.type === 'lookup')) {
 		lookupUtils.removeInheritedFields(field, objectNewValues);
 	}
 
-	if (value == null && field.type !== 'autoNumber') {
+	if ((value == null) && (field.type !== 'autoNumber')) {
 		return value;
 	}
 
 	// If field is Unique verify if exists another record on db with same value
-	if (value != null && field.isUnique === true && field.type !== 'autoNumber') {
+	if ((value != null) && (field.isUnique === true) && (field.type !== 'autoNumber')) {
 		query = {};
 		query[fieldName] = value;
 
-		const multiUpdate =
-			(idsToUpdate != null ? idsToUpdate.length : undefined) > 1;
+		const multiUpdate = (idsToUpdate != null ? idsToUpdate.length : undefined) > 1;
 
 		// If is a single update exclude self record in verification
-		if (actionType === 'update' && multiUpdate !== true) {
-			query._id = { $ne: idsToUpdate[0] };
+		if ((actionType === 'update') && (multiUpdate !== true)) {
+			query._id =
+				{$ne: idsToUpdate[0]};
 		}
 
 		const count = model.find(query).count();
 		if (count > 0) {
-			return new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${fieldName} must be unique`
-			);
+			return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be unique`);
 		}
 	}
 
@@ -149,76 +105,39 @@ metaUtils.validateAndProcessValueFor = function(
 	var mustBeValidFilter = function(v) {
 		let condition;
 		if (['and', 'or'].includes(!v.match)) {
-			result = new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${fieldName} must contains a property named 'match' with one of values ['and', 'or']`
-			);
+			result = new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must contains a property named 'match' with one of values ['and', 'or']`);
 			return false;
 		}
 
 		if (_.isArray(v.conditions)) {
 			const objectOfConditions = {};
 			for (condition of Array.from(v.conditions)) {
-				objectOfConditions[
-					condition.term.replace(/\./g, ':') + ':' + condition.operator
-				] = condition;
+				objectOfConditions[condition.term.replace(/\./g, ':') + ':' + condition.operator] = condition;
 			}
 			v.conditions = objectOfConditions;
 		}
 
 		if (!_.isObject(v.conditions)) {
-			result = new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${fieldName} must contains a property named 'conditions' of type Object with at least 1 item`
-			);
+			result = new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must contains a property named 'conditions' of type Object with at least 1 item`);
 			return false;
 		}
 
 		for (let key in v.conditions) {
 			condition = v.conditions[key];
-			if (
-				mustBeString(condition.term) === false ||
-				mustBeString(condition.operator) === false
-			) {
-				result = new Meteor.Error(
-					'utils-internal-error',
-					`Value for field ${fieldName} must contains conditions with properties 'term' and 'operator' of type String`
-				);
+			if ((mustBeString(condition.term) === false) || (mustBeString(condition.operator) === false)) {
+				result = new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must contains conditions with properties 'term' and 'operator' of type String`);
 				return false;
 			}
 
-			const operators = [
-				'exists',
-				'equals',
-				'not_equals',
-				'in',
-				'not_in',
-				'contains',
-				'not_contains',
-				'starts_with',
-				'end_with',
-				'less_than',
-				'greater_than',
-				'less_or_equals',
-				'greater_or_equals',
-				'between'
-			];
+			const operators = ['exists', 'equals', 'not_equals', 'in', 'not_in', 'contains', 'not_contains', 'starts_with', 'end_with', 'less_than', 'greater_than', 'less_or_equals', 'greater_or_equals', 'between'];
 
 			if (Array.from(operators).includes(!condition.operator)) {
-				result = new Meteor.Error(
-					'utils-internal-error',
-					`Value for field ${fieldName} must contains conditions with valid operators such as [${operators.join(
-						', '
-					)}]`
-				);
+				result = new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must contains conditions with valid operators such as [${operators.join(', ')}]`);
 				return false;
 			}
 
-			if (condition.value == null) {
-				result = new Meteor.Error(
-					'utils-internal-error',
-					`Value for field ${fieldName} must contains conditions property named 'value'`
-				);
+			if ((condition.value == null)) {
+				result = new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must contains conditions property named 'value'`);
 				return false;
 			}
 		}
@@ -234,86 +153,61 @@ metaUtils.validateAndProcessValueFor = function(
 
 	var mustBeString = function(v, path) {
 		if (!_.isString(v)) {
-			result = new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${path || fieldName} must be a valid String`
-			);
+			result = new Meteor.Error('utils-internal-error', `Value for field ${path || fieldName} must be a valid String`);
 			return false;
 		}
 	};
 
 	const mustBeStringOrNull = function(v, path) {
-		if (v == null) {
-			return true;
-		}
+		if ((v == null)) { return true; }
 		return mustBeString(v, path);
 	};
 
 	const mustBeNumber = function(v, path) {
 		if (!_.isNumber(v)) {
-			result = new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${path || fieldName} must be a valid Number`
-			);
+			result = new Meteor.Error('utils-internal-error', `Value for field ${path || fieldName} must be a valid Number`);
 			return false;
 		}
 	};
 
 	const mustBeNumberOrNull = function(v, path) {
-		if (v == null) {
-			return true;
-		}
+		if ((v == null)) { return true; }
 		return mustBeNumber(v, path);
 	};
 
 	const mustBeBoolean = function(v, path) {
 		if (!_.isBoolean(v)) {
-			result = new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${path || fieldName} must be a valid Boolean`
-			);
+			result = new Meteor.Error('utils-internal-error', `Value for field ${path || fieldName} must be a valid Boolean`);
 			return false;
 		}
 	};
 
 	const mustBeBooleanOrNull = function(v, path) {
-		if (v == null) {
-			return true;
-		}
+		if ((v == null)) { return true; }
 		return mustBeBoolean(v, path);
 	};
 
 	const mustBeObject = function(v, path) {
 		if (!_.isObject(v)) {
-			result = new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${path || fieldName} must be a valid Object`
-			);
+			result = new Meteor.Error('utils-internal-error', `Value for field ${path || fieldName} must be a valid Object`);
 			return false;
 		}
 	};
 
 	const mustBeObjectOrNull = function(v, path) {
-		if (v == null) {
-			return true;
-		}
+		if ((v == null)) { return true; }
 		return mustBeObject(v, path);
 	};
 
 	const mustBeArray = function(v, path) {
 		if (!_.isArray(v)) {
-			result = new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${path || fieldName} must be a valid Array`
-			);
+			result = new Meteor.Error('utils-internal-error', `Value for field ${path || fieldName} must be a valid Array`);
 			return false;
 		}
 	};
 
 	const mustBeArrayOrNull = function(v, path) {
-		if (v == null) {
-			return true;
-		}
+		if ((v == null)) { return true; }
 		return mustBeArray(v, path);
 	};
 
@@ -321,19 +215,13 @@ metaUtils.validateAndProcessValueFor = function(
 		const date = new Date(v);
 
 		if (isNaN(date)) {
-			result = new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${path ||
-					fieldName} must be a valid string or number representation of date`
-			);
+			result = new Meteor.Error('utils-internal-error', `Value for field ${path || fieldName} must be a valid string or number representation of date`);
 			return false;
 		}
 	};
 
 	const mustBeDateOrNull = function(v, path) {
-		if (v == null) {
-			return true;
-		}
+		if ((v == null)) { return true; }
 		return mustBeDate(v, path);
 	};
 
@@ -341,112 +229,70 @@ metaUtils.validateAndProcessValueFor = function(
 		let optionalKeys, requiredKeys;
 		switch (field.type) {
 			case 'boolean':
-				if (mustBeBoolean(value) === false) {
-					return result;
-				}
+				if (mustBeBoolean(value) === false) { return result; }
 				break;
 
-			case 'number':
-			case 'percentage':
-				if (mustBeNumber(value) === false) {
-					return result;
+			case 'number': case 'percentage':
+				if (mustBeNumber(value) === false) { return result; }
+
+				if (_.isNumber(field.maxValue) && (value > field.maxValue)) {
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be less than ${field.maxValue}`);
 				}
 
-				if (_.isNumber(field.maxValue) && value > field.maxValue) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName} must be less than ${field.maxValue}`
-					);
-				}
-
-				if (_.isNumber(field.minValue) && value < field.minValue) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName} must be greater than ${
-							field.minValue
-						}`
-					);
+				if (_.isNumber(field.minValue) && (value < field.minValue)) {
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be greater than ${field.minValue}`);
 				}
 				break;
 
 			case 'picklist':
-				if (_.isNumber(field.maxSelected) && field.maxSelected > 1) {
-					if (mustBeArray(value) === false) {
-						return result;
-					}
+				if (_.isNumber(field.maxSelected) && (field.maxSelected > 1)) {
+					if (mustBeArray(value) === false) { return result; }
 					if (value.length > field.maxSelected) {
-						return new Meteor.Error(
-							'utils-internal-error',
-							`Value for field ${fieldName} must be an array with max of ${
-								field.maxSelected
-							} item(s)`
-						);
+						return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be an array with max of ${field.maxSelected} item(s)`);
 					}
 				}
 
-				if (_.isNumber(field.minSelected) && field.minSelected > 0) {
+				if (_.isNumber(field.minSelected) && (field.minSelected > 0)) {
 					if (value.length < field.minSelected) {
-						return new Meteor.Error(
-							'utils-internal-error',
-							`Value for field ${fieldName} must be an array with min of ${
-								field.minSelected
-							} item(s)`
-						);
+						return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be an array with min of ${field.minSelected} item(s)`);
 					}
 				}
 
 				var valuesToVerify = [].concat(value);
 
 				for (let valueToVerify of Array.from(valuesToVerify)) {
-					if (field.options[valueToVerify] == null) {
-						return new Meteor.Error(
-							'utils-internal-error',
-							`Value ${valueToVerify} for field ${fieldName} is invalid`
-						);
+					if ((field.options[valueToVerify] == null)) {
+						return new Meteor.Error('utils-internal-error', `Value ${valueToVerify} for field ${fieldName} is invalid`);
 					}
 				}
 				break;
 
-			case 'text':
-			case 'richText':
+			case 'text': case 'richText':
 				if (_.isNumber(value)) {
 					value = String(value);
 				}
 
-				if (mustBeString(value) === false) {
-					return result;
-				}
+				if (mustBeString(value) === false) { return result; }
 
-				if (
-					field.normalization != null &&
-					changeCase[`${field.normalization}Case`] != null
-				) {
+				if ((field.normalization != null) && (changeCase[`${field.normalization}Case`] != null)) {
 					value = changeCase[`${field.normalization}Case`](value);
 				}
 
-				if (_.isNumber(field.size) && field.size > 0) {
+				if (_.isNumber(field.size) && (field.size > 0)) {
 					if (value.length > field.size) {
-						return new Meteor.Error(
-							'utils-internal-error',
-							`Value for field ${fieldName} must be smaller than ${field.size}`
-						);
+						return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be smaller than ${field.size}`);
 					}
 				}
 				break;
 
-			case 'dateTime':
-			case 'date':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
+			case 'dateTime': case 'date':
+				if (mustBeObject(value) === false) { return result; }
 
-				if (mustBeDate(value.$date || value, `${fieldName}.$date`) === false) {
-					return result;
-				}
+				if (mustBeDate((value.$date || value), `${fieldName}.$date`) === false) { return result; }
 
 				value = new Date(value.$date || value);
 
-				if (field.maxValue != null || field.minValue != null) {
+				if ((field.maxValue != null) || (field.minValue != null)) {
 					let momentFormat;
 					let { maxValue } = field;
 					let { minValue } = field;
@@ -457,7 +303,7 @@ metaUtils.validateAndProcessValueFor = function(
 						value.setMilliseconds(0);
 					}
 
-					if (maxValue != null && maxValue === '$now') {
+					if ((maxValue != null) && (maxValue === '$now')) {
 						maxValue = new Date();
 						if (field.type === 'date') {
 							maxValue.setHours(0);
@@ -467,7 +313,7 @@ metaUtils.validateAndProcessValueFor = function(
 						}
 					}
 
-					if (minValue != null && minValue === '$now') {
+					if ((minValue != null) && (minValue === '$now')) {
 						minValue = new Date();
 						if (field.type === 'date') {
 							minValue.setHours(0);
@@ -483,76 +329,45 @@ metaUtils.validateAndProcessValueFor = function(
 						momentFormat = 'DD/MM/YYYY HH:mm:ss';
 					}
 
-					if (mustBeDate(maxValue) !== false && value > maxValue) {
-						return new Meteor.Error(
-							'utils-internal-error',
-							`Value for field ${fieldName} must be less than or equals to ${moment(
-								maxValue
-							).format(momentFormat)}`
-						);
+					if ((mustBeDate(maxValue) !== false) && (value > maxValue)) {
+						return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be less than or equals to ${moment(maxValue).format(momentFormat)}`);
 					}
 
-					if (mustBeDate(minValue) !== false && value < minValue) {
-						return new Meteor.Error(
-							'utils-internal-error',
-							`Value for field ${fieldName} must be greater than or equals to ${moment(
-								minValue
-							).format(momentFormat)}`
-						);
+					if ((mustBeDate(minValue) !== false) && (value < minValue)) {
+						return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be greater than or equals to ${moment(minValue).format(momentFormat)}`);
 					}
 				}
 				break;
 			case 'time':
-				if (mustBeNumber(value) === false) {
-					return result;
-				}
+				if (mustBeNumber(value) === false) { return result; }
 
-				if (value < 0 || value > 86400000) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName} must be agreater then 0 and less then 86400000`
-					);
+				if ((value < 0) || (value > 86400000)) {
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be agreater then 0 and less then 86400000`);
 				}
 				break;
 
 			case 'email':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
-				if (mustBeString(value.address) === false) {
-					return result;
-				}
-				if (mustBeStringOrNull(value.type) === false) {
-					return result;
-				}
+				if (mustBeObject(value) === false) { return result; }
+				if (mustBeString(value.address) === false) { return result; }
+				if (mustBeStringOrNull(value.type) === false) { return result; }
 
 				if (regexUtils.email.test(value.address) === false) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName}.address must be a valid email`
-					);
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName}.address must be a valid email`);
 				}
 
 				value.address = value.address.toLowerCase();
 				break;
 
 			case 'url':
-				if (mustBeString(value) === false) {
-					return result;
-				}
+				if (mustBeString(value) === false) { return result; }
 
 				if (regexUtils.url.test(value) === false) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName} must be a valid url`
-					);
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be a valid url`);
 				}
 				break;
 
 			case 'personName':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
+				if (mustBeObject(value) === false) { return result; }
 
 				var keys = ['prefix', 'first', 'middle', 'last', 'sufix'];
 
@@ -560,9 +375,7 @@ metaUtils.validateAndProcessValueFor = function(
 
 				var fullName = [];
 				for (var key of Array.from(keys)) {
-					if (mustBeStringOrNull(value[key], `${fieldName}.${key}`) === false) {
-						return result;
-					}
+					if (mustBeStringOrNull(value[key], `${fieldName}.${key}`) === false) { return result; }
 					if (_.isString(value[key])) {
 						value[key] = changeCase.titleCase(value[key]);
 						fullName.push(value[key]);
@@ -573,9 +386,7 @@ metaUtils.validateAndProcessValueFor = function(
 				break;
 
 			case 'phone':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
+				if (mustBeObject(value) === false) { return result; }
 
 				var validKeys = ['countryCode', 'phoneNumber', 'extention', 'type'];
 
@@ -591,117 +402,59 @@ metaUtils.validateAndProcessValueFor = function(
 					value.countryCode = parseInt(value.countryCode);
 				}
 
-				if (
-					mustBeNumber(value.countryCode, `${fieldName}.countryCode`) === false
-				) {
-					return result;
-				}
-				if (
-					mustBeString(value.phoneNumber, `${fieldName}.phoneNumber`) === false
-				) {
-					return result;
-				}
-				if (
-					mustBeStringOrNull(value.extention, `${fieldName}.extention`) ===
-					false
-				) {
-					return result;
-				}
-				if (
-					mustBeStringOrNull(value.extention, `${fieldName}.type`) === false
-				) {
-					return result;
+				if (mustBeNumber(value.countryCode, `${fieldName}.countryCode`) === false) { return result; }
+				if (mustBeString(value.phoneNumber, `${fieldName}.phoneNumber`) === false) { return result; }
+				if (mustBeStringOrNull(value.extention, `${fieldName}.extention`) === false) { return result; }
+				if (mustBeStringOrNull(value.extention, `${fieldName}.type`) === false) { return result; }
+
+				if ((value.countryCode < 0) || (value.countryCode > 999)) {
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName}.countryCode must contains 1, 2 or 3 digits`);
 				}
 
-				if (value.countryCode < 0 || value.countryCode > 999) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName}.countryCode must contains 1, 2 or 3 digits`
-					);
-				}
-
-				if (
-					value.countryCode === 55 &&
-					!/^[0-9]{10,12}$/.test(value.phoneNumber)
-				) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName}.phoneNumber with countryCode '55' must contains from 10 to 12 digits`
-					);
+				if ((value.countryCode === 55) && !/^[0-9]{10,12}$/.test(value.phoneNumber)) {
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName}.phoneNumber with countryCode '55' must contains from 10 to 12 digits`);
 				}
 				break;
 
 			case 'geoloc':
-				if (mustBeArray(value) === false) {
-					return result;
-				}
+				if (mustBeArray(value) === false) { return result; }
 
-				if (
-					value.length !== 2 ||
-					!_.isNumber(value[0]) ||
-					!_.isNumber(value[1])
-				) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName} must be an array with longitude and latitude`
-					);
+				if ((value.length !== 2) || !_.isNumber(value[0]) || !_.isNumber(value[1])) {
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be an array with longitude and latitude`);
 				}
 				break;
 
 			case 'money':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
+				if (mustBeObject(value) === false) { return result; }
 
 				removeUnauthorizedKeys(value, ['currency', 'value']);
 
 				var currencies = ['BRL'];
-				if (
-					!_.isString(value.currency) ||
-					Array.from(currencies).includes(!value.currency)
-				) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName}.currency must be one of [${currencies.join(
-							', '
-						)}]`
-					);
+				if (!_.isString(value.currency) || Array.from(currencies).includes(!value.currency)) {
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName}.currency must be one of [${currencies.join(', ')}]`);
 				}
 
 				if (!_.isNumber(value.value)) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName}.value must be a valid Number`
-					);
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName}.value must be a valid Number`);
 				}
 				break;
 
 			case 'json':
 				if (!_.isObject(value) && !_.isArray(value)) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName} must be a valid Array or Object`
-					);
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be a valid Array or Object`);
 				}
 				break;
 
 			case 'password':
-				if (mustBeString(value) === false) {
-					return result;
-				}
+				if (mustBeString(value) === false) { return result; }
 
 				value = password.encrypt(value);
 				break;
 
 			case 'encrypted':
-				if (mustBeString(value) === false) {
-					return result;
-				}
+				if (mustBeString(value) === false) { return result; }
 
-				value = crypto
-					.createHash('md5')
-					.update(value)
-					.digest('hex');
+				value = crypto.createHash('md5').update(value).digest('hex');
 				break;
 
 			case 'autoNumber':
@@ -713,50 +466,26 @@ metaUtils.validateAndProcessValueFor = function(
 				break;
 
 			case 'address':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
+				if (mustBeObject(value) === false) { return result; }
 
 				if (field.isRequired === true) {
 					requiredKeys = ['country', 'state', 'city', 'place', 'number'];
-					optionalKeys = [
-						'postalCode',
-						'district',
-						'placeType',
-						'complement',
-						'type'
-					];
+					optionalKeys = ['postalCode', 'district', 'placeType', 'complement', 'type'];
 				} else {
 					requiredKeys = [];
-					optionalKeys = [
-						'country',
-						'state',
-						'city',
-						'place',
-						'number',
-						'postalCode',
-						'district',
-						'placeType',
-						'complement',
-						'type'
-					];
+					optionalKeys = ['country', 'state', 'city', 'place', 'number', 'postalCode', 'district', 'placeType', 'complement', 'type'];
 				}
 
 				var extraKeys = ['geolocation'];
 
-				removeUnauthorizedKeys(
-					value,
-					requiredKeys.concat(optionalKeys).concat(extraKeys)
-				);
+				removeUnauthorizedKeys(value, requiredKeys.concat(optionalKeys).concat(extraKeys));
 
 				for (key of Array.from(requiredKeys)) {
 					if (_.isNumber(value[key])) {
 						value[key] = String(value[key]);
 					}
 
-					if (mustBeString(value[key], `${fieldName}.${key}`) === false) {
-						return result;
-					}
+					if (mustBeString(value[key], `${fieldName}.${key}`) === false) { return result; }
 				}
 
 				for (key of Array.from(optionalKeys)) {
@@ -764,73 +493,40 @@ metaUtils.validateAndProcessValueFor = function(
 						value[key] = String(value[key]);
 					}
 
-					if (mustBeStringOrNull(value[key], `${fieldName}.${key}`) === false) {
-						return result;
-					}
+					if (mustBeStringOrNull(value[key], `${fieldName}.${key}`) === false) { return result; }
 				}
 
-				if (
-					mustBeArrayOrNull(value.geolocation, `${fieldName}.geolocation`) ===
-					false
-				) {
-					return result;
-				}
+				if (mustBeArrayOrNull(value.geolocation, `${fieldName}.geolocation`) === false) { return result; }
 
-				if (
-					_.isArray(value.geolocation) &&
-					(value.geolocation.length !== 2 ||
-						!_.isNumber(value.geolocation[0]) ||
-						!_.isNumber(value.geolocation[1]))
-				) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Value for field ${fieldName}.geolocation must be an array with longitude and latitude`
-					);
+				if (_.isArray(value.geolocation) && ((value.geolocation.length !== 2) || !_.isNumber(value.geolocation[0]) || !_.isNumber(value.geolocation[1]))) {
+					return new Meteor.Error('utils-internal-error', `Value for field ${fieldName}.geolocation must be an array with longitude and latitude`);
 				}
 				break;
 
 			case 'filter':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
+				if (mustBeObject(value) === false) { return result; }
 
-				if (mustBeValidFilter(value) === false) {
-					return result;
-				}
+				if (mustBeValidFilter(value) === false) { return result; }
 
 				utils.recursiveObject(value, function(key, value, parent) {
 					if (value != null ? value['$date'] : undefined) {
-						return (parent[key] = new Date(value['$date']));
+						return parent[key] = new Date(value['$date']);
 					}
-				});
+			});
 				break;
 
 			case 'composite':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
+				if (mustBeObject(value) === false) { return result; }
 
 				if (field.compositeType === 'reference') {
 					meta = Meta[field.objectRefId];
-					if (meta == null) {
-						return new Meteor.Error(
-							'utils-internal-error',
-							`Document ${field.objectRefId} not found`
-						);
+					if ((meta == null)) {
+						return new Meteor.Error('utils-internal-error', `Document ${field.objectRefId} not found`);
 					}
 
 					for (key in value) {
 						const subValue = value[key];
-						const validation = metaUtils.validateAndProcessValueFor(
-							meta,
-							key,
-							subValue,
-							actionType,
-							model,
-							value,
-							value,
-							idsToUpdate
-						);
+						const validation = metaUtils.validateAndProcessValueFor(meta, key, subValue, actionType, model, value, value, idsToUpdate);
 						if (validation instanceof Error) {
 							return validation;
 						}
@@ -839,77 +535,38 @@ metaUtils.validateAndProcessValueFor = function(
 				}
 				break;
 
-			case 'lookup':
-			case 'inheritLookup':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
+			case 'lookup': case 'inheritLookup':
+				if (mustBeObject(value) === false) { return result; }
 
-				if (mustBeString(value._id, `${fieldName}._id`) === false) {
-					return result;
-				}
+				if (mustBeString(value._id, `${fieldName}._id`) === false) { return result; }
 
 				var lookupModel = Models[field.document];
-				if (lookupModel == null) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Document ${field.document} not found`
-					);
+				if ((lookupModel == null)) {
+					return new Meteor.Error('utils-internal-error', `Document ${field.document} not found`);
 				}
 
-				query = { _id: value._id };
+				query =
+					{_id: value._id};
 
 				var record = lookupModel.findOne(query);
 
-				if (record == null) {
-					return new Meteor.Error(
-						'utils-internal-error',
-						`Record not found for field ${fieldName} with _id [${
-							value._id
-						}] on document [${field.document}]`
-					);
+				if ((record == null)) {
+					return new Meteor.Error('utils-internal-error', `Record not found for field ${fieldName} with _id [${value._id}] on document [${field.document}]`);
 				}
 
-				lookupUtils.copyDescriptionAndInheritedFields(
-					field,
-					value,
-					record,
-					meta,
-					actionType,
-					model,
-					objectOriginalValues,
-					objectNewValues,
-					idsToUpdate
-				);
+				lookupUtils.copyDescriptionAndInheritedFields(field, value, record, meta, actionType, model, objectOriginalValues, objectNewValues, idsToUpdate);
 				break;
 
 			// when 'masked'
 			// when 'calculated'
 			case 'file':
-				if (mustBeObject(value) === false) {
-					return result;
-				}
-				keys = [
-					'key',
-					'name',
-					'size',
-					'created',
-					'etag',
-					'headers',
-					'kind',
-					'last_modified',
-					'description',
-					'label',
-					'wildcard'
-				];
+				if (mustBeObject(value) === false) { return result; }
+				keys = ['key', 'name', 'size', 'created', 'etag', 'headers', 'kind', 'last_modified', 'description', 'label', 'wildcard'];
 				removeUnauthorizedKeys(value, keys);
 				break;
 
 			default:
-				var e = new Meteor.Error(
-					'utils-internal-error',
-					`Field ${fieldName} of type ${field.type} can not be validated`
-				);
+				var e = new Meteor.Error('utils-internal-error', `Field ${fieldName} of type ${field.type} can not be validated`);
 				NotifyErrors.notify('ValidateError', e);
 				return e;
 		}
@@ -925,10 +582,7 @@ metaUtils.validateAndProcessValueFor = function(
 		if (value != null) {
 			value = [value];
 		} else {
-			return new Meteor.Error(
-				'utils-internal-error',
-				`Value for field ${fieldName} must be array`
-			);
+			return new Meteor.Error('utils-internal-error', `Value for field ${fieldName} must be array`);
 		}
 	}
 
@@ -948,7 +602,8 @@ metaUtils.getNextUserFromQueue = function(queueStrId, user) {
 	const findAndModify = Meteor.wrapAsync(collection.findAndModify, collection);
 
 	// Mount query, sort, update, and options
-	const query = { 'queue._id': queueStrId };
+	const query =
+		{'queue._id': queueStrId};
 
 	const sort = {
 		count: 1,
@@ -960,7 +615,7 @@ metaUtils.getNextUserFromQueue = function(queueStrId, user) {
 			count: 1
 		},
 		$set: {
-			_updatedAt: new Date(),
+			_updatedAt: new Date,
 			_updatedBy: {
 				_id: user._id,
 				name: user.name,
@@ -969,7 +624,8 @@ metaUtils.getNextUserFromQueue = function(queueStrId, user) {
 		}
 	};
 
-	const options = { new: true };
+	const options =
+		{'new': true};
 
 	// Execute findAndModify
 	let queueUser = findAndModify(query, sort, update, options);
@@ -982,10 +638,7 @@ metaUtils.getNextUserFromQueue = function(queueStrId, user) {
 
 	if (!_.isObject(queueUser)) {
 		queueUser = Models.Queue.findOne(queueStrId);
-		if (
-			__guard__(queueUser != null ? queueUser._user : undefined, x => x[0]) !=
-			null
-		) {
+		if (__guard__(queueUser != null ? queueUser._user : undefined, x => x[0]) != null) {
 			return {
 				user: queueUser._user[0]
 			};
@@ -1002,21 +655,17 @@ metaUtils.getNextUserFromQueue = function(queueStrId, user) {
 
 metaUtils.getNextCode = function(documentName, fieldName) {
 	const meta = Meta[documentName];
-	if (fieldName == null) {
-		fieldName = 'code';
-	}
+	if (fieldName == null) { fieldName = 'code'; }
 
 	// Force autoNumber record to exists
-	Models[`${documentName}.AutoNumber`].upsert(
-		{ _id: fieldName },
-		{ $set: { _id: fieldName } }
-	);
+	Models[`${documentName}.AutoNumber`].upsert({_id: fieldName}, {$set: {_id: fieldName}});
 
 	const collection = Models[`${documentName}.AutoNumber`].rawCollection();
 	const findAndModify = Meteor.wrapAsync(collection.findAndModify, collection);
 
 	// Mount query, sort, update, and options
-	const query = { _id: fieldName };
+	const query =
+		{_id: fieldName};
 
 	const sort = {};
 
@@ -1026,15 +675,13 @@ metaUtils.getNextCode = function(documentName, fieldName) {
 		}
 	};
 
-	const options = { new: true };
+	const options =
+		{'new': true};
 
 	// Try to get next code
 	try {
 		const result = findAndModify(query, sort, update, options);
-		if (
-			(result != null ? result.value : undefined) &&
-			__guard__(result != null ? result.value : undefined, x => x.next_val)
-		) {
+		if ((result != null ? result.value : undefined) && __guard__(result != null ? result.value : undefined, x => x.next_val)) {
 			return result.value.next_val;
 		}
 	} catch (e) {
@@ -1060,31 +707,19 @@ metaUtils.populateLookupsData = function(documentName, data, fields) {
 
 	for (let fieldName in meta.fields) {
 		const field = meta.fields[fieldName];
-		if (
-			field.type === 'lookup' &&
-			data[fieldName] != null &&
-			fields[fieldName] != null
-		) {
+		if ((field.type === 'lookup') && (data[fieldName] != null) && (fields[fieldName] != null)) {
 			const options = {};
 			if (Match.test(fields[fieldName], Object)) {
 				options.fields = fields[fieldName];
 			}
 
 			if (field.isList !== true) {
-				data[fieldName] = Models[field.document].findOne(
-					{ _id: data[fieldName]._id },
-					options
-				);
+				data[fieldName] = Models[field.document].findOne({_id: data[fieldName]._id}, options);
 			} else {
-				const ids =
-					data[fieldName] != null
-						? data[fieldName].map(item => item._id)
-						: undefined;
+				const ids = data[fieldName] != null ? data[fieldName].map(item => item._id) : undefined;
 
 				if (ids.length > 0) {
-					data[fieldName] = Models[field.document]
-						.find({ _id: { $in: ids } }, options)
-						.fetch();
+					data[fieldName] = Models[field.document].find({_id: {$in: ids}}, options).fetch();
 				}
 			}
 		}
@@ -1094,7 +729,5 @@ metaUtils.populateLookupsData = function(documentName, data, fields) {
 };
 
 function __guard__(value, transform) {
-	return typeof value !== 'undefined' && value !== null
-		? transform(value)
-		: undefined;
+  return (typeof value !== 'undefined' && value !== null) ? transform(value) : undefined;
 }

@@ -14,26 +14,20 @@ const moment = Npm.require('moment');
 utils = {};
 
 utils.deepEqual = function(a, b) {
-	if (b == null && a == null) {
+	if ((b == null) && (a == null)) {
 		return true;
 	}
 
-	if (b == null || a == null) {
+	if ((b == null) || (a == null)) {
 		return false;
 	}
 
 	const compareObject = function() {
-		if (
-			a instanceof Meteor.Collection.ObjectID &&
-			b instanceof Meteor.Collection.ObjectID
-		) {
+		if (a instanceof Meteor.Collection.ObjectID && b instanceof Meteor.Collection.ObjectID) {
 			return a._str === b._str;
 		}
 
-		if (
-			a instanceof Meteor.Collection.ObjectID ||
-			b instanceof Meteor.Collection.ObjectID
-		) {
+		if (a instanceof Meteor.Collection.ObjectID || b instanceof Meteor.Collection.ObjectID) {
 			return false;
 		}
 
@@ -118,19 +112,16 @@ utils.copyObjectFieldsByPaths = (fromObject, toObject, paths) =>
 			}
 
 			if (walkFrom[leaf] != null) {
-				result.push((walkTo[leaf] = walkFrom[leaf]));
+				result.push(walkTo[leaf] = walkFrom[leaf]);
 			} else {
 				result.push(undefined);
 			}
 		}
 		return result;
-	})();
+	})()
+;
 
-utils.copyObjectFieldsByPathsIncludingIds = function(
-	fromObject,
-	toObject,
-	paths
-) {
+utils.copyObjectFieldsByPathsIncludingIds = function(fromObject, toObject, paths) {
 	const pathsToAdd = [];
 
 	if (paths.indexOf('_id') === -1) {
@@ -160,6 +151,7 @@ utils.getTermsOfFilter = function(filter) {
 		for (condition of Array.from(filter.conditions)) {
 			terms.push(condition.term);
 		}
+
 	} else if (_.isObject(filter.conditions)) {
 		for (let key in filter.conditions) {
 			condition = filter.conditions[key];
@@ -184,6 +176,7 @@ utils.getFirstPartOfArrayOfPaths = function(paths) {
 	return paths.map(i => i.split('.')[0]);
 };
 
+
 utils.getObjectIdString = function(objectId) {
 	if (objectId instanceof Meteor.Collection.ObjectID) {
 		return objectId._str;
@@ -200,9 +193,7 @@ utils.getObjectIdString = function(objectId) {
 	return objectId;
 };
 
-utils.convertStringOfFieldsSeparatedByCommaIntoObjectToFind = function(
-	fieldsString
-) {
+utils.convertStringOfFieldsSeparatedByCommaIntoObjectToFind = function(fieldsString) {
 	const fields = {};
 
 	if (_.isString(fieldsString)) {
@@ -216,17 +207,12 @@ utils.convertStringOfFieldsSeparatedByCommaIntoObjectToFind = function(
 };
 
 utils.rpad = function(str, length) {
-	while (str.length < length) {
-		str += ' ';
-	}
+	while (str.length < length) { str += ' '; }
 	return str;
 };
 
 utils.getByLocale = function(obj, user) {
-	if (
-		(user != null ? user.locale : undefined) == null ||
-		(obj != null ? obj[user.locale] : undefined) == null
-	) {
+	if (((user != null ? user.locale : undefined) == null) || ((obj != null ? obj[user.locale] : undefined) == null)) {
 		return;
 	}
 
@@ -234,7 +220,7 @@ utils.getByLocale = function(obj, user) {
 };
 
 utils.getLabel = function(obj, user) {
-	if ((obj != null ? obj.label : undefined) == null) {
+	if (((obj != null ? obj.label : undefined) == null)) {
 		return;
 	}
 
@@ -242,7 +228,7 @@ utils.getLabel = function(obj, user) {
 };
 
 utils.getPlurals = function(obj, user) {
-	if ((obj != null ? obj.plurals : undefined) == null) {
+	if (((obj != null ? obj.plurals : undefined) == null)) {
 		return;
 	}
 
@@ -251,9 +237,7 @@ utils.getPlurals = function(obj, user) {
 
 utils.convertObjectIdsToFn = function(values, fn) {
 	if (_.isArray(values)) {
-		values.forEach(
-			(item, index) => (values[index] = utils.convertObjectIdsToFn(item, fn))
-		);
+		values.forEach((item, index) => values[index] = utils.convertObjectIdsToFn(item, fn));
 		return values;
 	}
 
@@ -262,10 +246,7 @@ utils.convertObjectIdsToFn = function(values, fn) {
 			return fn(values._str);
 		}
 
-		_.each(
-			values,
-			(value, key) => (values[key] = utils.convertObjectIdsToFn(value, fn))
-		);
+		_.each(values, (value, key) => values[key] = utils.convertObjectIdsToFn(value, fn));
 		return values;
 	}
 
@@ -298,9 +279,7 @@ utils.recursiveObject = function(obj, fn) {
 utils.runScriptBeforeValidation = function(script, data, req, extraData) {
 	try {
 		let user;
-		if (req.user != null) {
-			user = JSON.parse(JSON.stringify(req.user));
-		}
+		if (req.user != null) { user = JSON.parse(JSON.stringify(req.user)); }
 		const contextData = {
 			data,
 			emails: [],
@@ -318,22 +297,11 @@ utils.runScriptBeforeValidation = function(script, data, req, extraData) {
 		//	emails.push({ from: '', to: '', server: '', subject: '', html: '' });
 		//	emails.push({ from: '', to: '', server: '', subject: '', template: '_id', data: {  } });
 		//	emails.push({ from: '', to: '', server: '', template: '_id', data: {  } });
-		if (
-			sandbox.emails != null &&
-			_.isArray(sandbox.emails) &&
-			sandbox.emails.length > 0 &&
-			(typeof Models !== 'undefined' && Models !== null
-				? Models['Message']
-				: undefined) != null
-		) {
+		if ((sandbox.emails != null) && _.isArray(sandbox.emails) && (sandbox.emails.length > 0) && ((typeof Models !== 'undefined' && Models !== null ? Models['Message'] : undefined) != null)) {
 			sandbox.emails = JSON.parse(JSON.stringify(sandbox.emails));
 			for (let email of Array.from(sandbox.emails)) {
 				if (email.relations != null) {
-					email.data = metaUtils.populateLookupsData(
-						req.meta._id,
-						data,
-						email.relations
-					);
+					email.data = metaUtils.populateLookupsData(req.meta._id, data, email.relations);
 				}
 				if (email.toPath != null) {
 					email.to = utils.getObjectPathAgg(email.data, email.toPath);
@@ -354,13 +322,13 @@ utils.runScriptBeforeValidation = function(script, data, req, extraData) {
 			}
 		}
 
-		if (sandbox.result != null && _.isObject(sandbox.result)) {
+		if ((sandbox.result != null) && _.isObject(sandbox.result)) {
 			return sandbox.result;
 		} else {
 			return {};
 		}
 	} catch (e) {
-		req.notifyError('runScriptBeforeValidation', e, { script, data });
+		req.notifyError('runScriptBeforeValidation', e, {script, data});
 		return {};
 	}
 };
@@ -369,9 +337,7 @@ utils.runScriptBeforeValidation = function(script, data, req, extraData) {
 utils.runValidationScript = function(script, data, req, extraData) {
 	try {
 		let user;
-		if (req.user != null) {
-			user = JSON.parse(JSON.stringify(req.user));
-		}
+		if (req.user != null) { user = JSON.parse(JSON.stringify(req.user)); }
 		const contextData = {
 			data,
 			user,
@@ -383,13 +349,13 @@ utils.runValidationScript = function(script, data, req, extraData) {
 		script = `result = (function(data, user, console) { ${script} })(data, user, console);`;
 		vm.runInContext(script, sandbox);
 
-		if (sandbox.result != null && _.isObject(sandbox.result)) {
+		if ((sandbox.result != null) && _.isObject(sandbox.result)) {
 			return sandbox.result;
 		} else {
 			return {};
 		}
 	} catch (e) {
-		req.notifyError('runValidationScript', e, { script, data });
+		req.notifyError('runValidationScript', e, {script, data});
 		return {};
 	}
 };
@@ -400,18 +366,13 @@ utils.runScriptAfterSave = function(script, data, context, extraData) {
 		let user;
 		const konectyCall = function(method) {
 			if (method.match(/^auth:/)) {
-				throw new Meteor.Error(
-					'invalid-method',
-					'Trying to call an invalid method'
-				);
+				throw new Meteor.Error('invalid-method', 'Trying to call an invalid method');
 			}
 
 			return Meteor.call.apply(context, arguments);
 		};
 
-		if (context.user != null) {
-			user = JSON.parse(JSON.stringify(context.user));
-		}
+		if (context.user != null) { user = JSON.parse(JSON.stringify(context.user)); }
 		const contextData = {
 			data,
 			user,
@@ -427,24 +388,24 @@ utils.runScriptAfterSave = function(script, data, context, extraData) {
 		script = `result = (function(data, user, console, Models, konectyCall, extraData) { ${script} })(data, user, console, Models, konectyCall, extraData);`;
 		vm.runInContext(script, sandbox);
 
-		if (sandbox.result != null && _.isObject(sandbox.result)) {
+		if ((sandbox.result != null) && _.isObject(sandbox.result)) {
 			return sandbox.result;
 		} else {
 			return {};
 		}
 	} catch (e) {
 		console.log('scriptAfterSave Error ->'.red, e);
-		context.notifyError('runScriptAfterSave', e, { script, data });
+		context.notifyError('runScriptAfterSave', e, {script, data});
 		return {};
 	}
 };
 
 utils.formatValue = function(value, field, ignoreIsList) {
-	if (value == null) {
+	if ((value == null)) {
 		return '';
 	}
 
-	if (field.isList === true && ignoreIsList !== true) {
+	if ((field.isList === true) && (ignoreIsList !== true)) {
 		const values = [];
 		for (let item of Array.from(value)) {
 			values.push(utils.formatValue(item, field, true));
@@ -456,11 +417,7 @@ utils.formatValue = function(value, field, ignoreIsList) {
 		// TODO time
 
 		case 'boolean':
-			if (value === true) {
-				return 'Sim';
-			} else {
-				return 'Não';
-			}
+			if (value === true) { return 'Sim'; } else { return 'Não'; }
 		case 'personName':
 			return value.full;
 		case 'lookup':
@@ -477,11 +434,9 @@ utils.formatValue = function(value, field, ignoreIsList) {
 						descriptionField = meta.fields[descriptionField[0]];
 
 						if (descriptionField && _.isObject(value)) {
-							return recursiveValues.push(
-								recursive(descriptionField, value[descriptionField.name])
-							);
+							return recursiveValues.push(recursive(descriptionField, value[descriptionField.name]));
 						}
-					});
+				});
 
 					return recursiveValues;
 				}
@@ -492,15 +447,14 @@ utils.formatValue = function(value, field, ignoreIsList) {
 
 			result = recursive(field, value);
 
-			var sort = items => items.sort((a, b) => _.isArray(a));
+			var sort = items =>
+				items.sort((a, b) => _.isArray(a))
+			;
 
 			var resultRecursive = function(items) {
 				if (_.isArray(items)) {
 					items = sort(items);
-					_.each(
-						items,
-						(item, index) => (items[index] = resultRecursive(item))
-					);
+					_.each(items, (item, index) => items[index] = resultRecursive(item));
 
 					return `(${items.join(' - ')})`;
 				}
@@ -509,64 +463,47 @@ utils.formatValue = function(value, field, ignoreIsList) {
 			};
 
 			result = sort(result);
-			_.each(result, (r, index) => (result[index] = resultRecursive(r)));
+			_.each(result, (r, index) => result[index] = resultRecursive(r));
 
 			return result.join(' - ');
 		case 'address':
 			result = [];
-			value.placeType != null && result.push(`${value.placeType}`);
-			value.place != null && result.push(` ${value.place}`);
-			value.number != null && result.push(`, ${value.number}`);
-			value.complement != null && result.push(`, ${value.complement}`);
-			value.district != null && result.push(`, ${value.district}`);
-			value.city != null && result.push(`, ${value.city}`);
-			value.state != null && result.push(`, ${value.state}`);
-			value.country != null && result.push(`, ${value.country}`);
-			value.postalCode != null && result.push(`, ${value.postalCode}`);
+			(value.placeType != null) && result.push(`${value.placeType}`);
+			(value.place != null) && result.push(` ${value.place}`);
+			(value.number != null) && result.push(`, ${value.number}`);
+			(value.complement != null) && result.push(`, ${value.complement}`);
+			(value.district != null) && result.push(`, ${value.district}`);
+			(value.city != null) && result.push(`, ${value.city}`);
+			(value.state != null) && result.push(`, ${value.state}`);
+			(value.country != null) && result.push(`, ${value.country}`);
+			(value.postalCode != null) && result.push(`, ${value.postalCode}`);
 			return result.join('');
 		case 'phone':
 			result = [];
-			value.countryCode != null && result.push(`${value.countryCode}`);
-			value.phoneNumber != null &&
-				value.phoneNumber.length > 6 &&
-				result.push(
-					` (${value.phoneNumber.substr(0, 2)}) ${value.phoneNumber.substr(
-						2,
-						4
-					)}-${value.phoneNumber.substr(6)}`
-				);
+			(value.countryCode != null) && result.push(`${value.countryCode}`);
+			(value.phoneNumber != null) && (value.phoneNumber.length > 6) && result.push(` (${value.phoneNumber.substr(0,2)}) ${(value.phoneNumber).substr(2,4)}-${(value.phoneNumber).substr(6)}`);
 			return result.join('');
 		case 'money':
 			result = [];
-			if (
-				(value != null ? value.currency : undefined) != null &&
-				value.currency === 'BRL'
-			) {
+			if (((value != null ? value.currency : undefined) != null) && (value.currency === 'BRL')) {
 				return `R$ ${_.numberFormat(value.value, 2, ',', '.')}`;
 			} else {
 				return `$ ${_.numberFormat(value.value, 2)}`;
 			}
 		case 'date':
 			if (value.toISOString != null) {
-				return value
-					.toISOString()
-					.replace(/^(\d{4})-(\d{2})-(\d{2}).*/, '$3/$2/$1');
+				return value.toISOString().replace(/^(\d{4})-(\d{2})-(\d{2}).*/, "$3/$2/$1");
 			} else {
 				return value;
 			}
 		case 'dateTime':
 			if (value.toISOString != null) {
-				return value
-					.toISOString()
-					.replace(
-						/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).*/,
-						'$3/$2/$1 $4:$5:$6'
-					);
+				return value.toISOString().replace(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).*/, "$3/$2/$1 $4:$5:$6");
 			} else {
 				return value;
 			}
 		case 'filter':
-			return '(filtro)';
+			return "(filtro)";
 		case 'picklist':
 			if (_.isArray(value)) {
 				return value.join(', ');
@@ -580,11 +517,11 @@ utils.formatValue = function(value, field, ignoreIsList) {
 
 utils.getObjectPathAgg = function(obj, path, defaultValue) {
 	let value;
-	if (path == null) {
+	if ((path == null)) {
 		return obj;
 	}
 
-	if (obj == null) {
+	if ((obj == null)) {
 		return defaultValue;
 	}
 
@@ -610,29 +547,21 @@ utils.getObjectPathAgg = function(obj, path, defaultValue) {
 			value = value.concat(utils.getObjectPathAgg(item, path, defaultValue));
 		}
 	} else {
-		value = utils.getObjectPathAgg(
-			obj[currentPath],
-			path.slice(1),
-			defaultValue
-		);
+		value = utils.getObjectPathAgg(obj[currentPath], path.slice(1), defaultValue);
 	}
 
 	return value;
 };
 
 utils.setObjectByPath = function(obj, keyPath, value) {
-	const lastKeyIndex = keyPath.length - 1;
-	for (
-		let i = 0, end = lastKeyIndex, asc = 0 <= end;
-		asc ? i < end : i > end;
-		asc ? i++ : i--
-	) {
+	const lastKeyIndex = keyPath.length-1;
+	for (let i = 0, end = lastKeyIndex, asc = 0 <= end; asc ? i < end : i > end; asc ? i++ : i--) {
 		const key = keyPath[i];
-		if (!Array.from(obj).includes(key)) {
+		if (!(Array.from(obj).includes(key))) {
 			obj[key] = {};
 		}
 		obj = obj[key];
 	}
 
-	return (obj[keyPath[lastKeyIndex]] = value);
+	return obj[keyPath[lastKeyIndex]] = value;
 };

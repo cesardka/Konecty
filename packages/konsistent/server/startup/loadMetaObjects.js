@@ -104,8 +104,6 @@ Konsistent.start = function(MetaObject, Models, rebuildMetas) {
 
 	Konsistent.MetaObject.find({type: 'namespace'}).observe({
 		added(meta) {
-			console.log('add meta ->', meta);
-
 			return global.Namespace = meta;
 		},
 
@@ -140,6 +138,30 @@ Konsistent.start = function(MetaObject, Models, rebuildMetas) {
 			}
 		});
 
-		return mailConsumer.start();
+		mailConsumer.start();
+	}
+
+	Accounts.loginServiceConfiguration.remove({
+		service: "google"});
+
+	if (global.Namespace.googleApp != null) {
+		console.log("Setup google config for accounts".green);
+		Accounts.loginServiceConfiguration.insert({
+			service: "google",
+			clientId: global.Namespace.googleApp.clientId,
+			secret: global.Namespace.googleApp.secret
+		});
+	}
+
+	Accounts.loginServiceConfiguration.remove({
+		service: "facebook"});
+
+	if (global.Namespace.facebookApp != null) {
+		console.log("Setup facebook config for accounts".green);
+		return Accounts.loginServiceConfiguration.insert({
+			service: "facebook",
+			appId: global.Namespace.facebookApp.appId,
+			secret: global.Namespace.facebookApp.secret
+		});
 	}
 };

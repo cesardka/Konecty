@@ -40,7 +40,6 @@ NotifyErrors.notify = function(type, message, options) {
 		return;
 	}
 
-	// Kadira.trackError type, message.message, stacks: message.stack
 	return bugsnag.notify(message, options);
 };
 

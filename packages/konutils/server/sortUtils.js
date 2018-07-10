@@ -14,11 +14,8 @@ sortUtils.parseSortArray = function(sortArray) {
 	}
 
 	_.each(sortArray, function(item) {
-		if (item.direction == null) {
-			item.direction = 'ASC';
-		}
-		return (sort[item.property || item.term] =
-			item.direction.toUpperCase() === 'ASC' ? 1 : -1);
+		if (item.direction == null) { item.direction = 'ASC'; }
+		return sort[item.property || item.term] = item.direction.toUpperCase() === 'ASC' ? 1 : -1;
 	});
 
 	return sort;

@@ -8,17 +8,7 @@
  */
 lookupUtils = {};
 
-lookupUtils.copyDescriptionAndInheritedFields = function(
-	lookupField,
-	lookupValue,
-	lookupRecord,
-	meta,
-	actionType,
-	model,
-	objectOriginalValues,
-	objectNewValues,
-	idsToUpdate
-) {
+lookupUtils.copyDescriptionAndInheritedFields = function(lookupField, lookupValue, lookupRecord, meta, actionType, model, objectOriginalValues, objectNewValues, idsToUpdate) {
 	// Remove all values from object to prevent unwanted values
 	for (let key in lookupValue) {
 		if (key !== '_id') {
@@ -29,40 +19,20 @@ lookupUtils.copyDescriptionAndInheritedFields = function(
 	lookupValue._id = lookupRecord._id;
 
 	if (_.isArray(lookupField.descriptionFields)) {
-		utils.copyObjectFieldsByPathsIncludingIds(
-			lookupRecord,
-			lookupValue,
-			lookupField.descriptionFields
-		);
+		utils.copyObjectFieldsByPathsIncludingIds(lookupRecord, lookupValue, lookupField.descriptionFields);
 	}
 
 	if (_.isArray(lookupField.inheritedFields)) {
 		for (let inheritedField of Array.from(lookupField.inheritedFields)) {
 			var validation;
-			if (
-				['always', 'hierarchy_always', 'once_readonly'].includes(
-					inheritedField.inherit
-				)
-			) {
+			if (['always', 'hierarchy_always', 'once_readonly'].includes(inheritedField.inherit)) {
 				if (inheritedField.inherit === 'hierarchy_always') {
-					if (lookupRecord[inheritedField.fieldName] == null) {
-						lookupRecord[inheritedField.fieldName] = [];
-					}
+					if (lookupRecord[inheritedField.fieldName] == null) { lookupRecord[inheritedField.fieldName] = []; }
 					lookupRecord[inheritedField.fieldName].push({
-						_id: lookupRecord._id
-					});
+						_id: lookupRecord._id});
 				}
 
-				validation = metaUtils.validateAndProcessValueFor(
-					meta,
-					inheritedField.fieldName,
-					lookupRecord[inheritedField.fieldName],
-					actionType,
-					model,
-					objectOriginalValues,
-					objectNewValues,
-					idsToUpdate
-				);
+				validation = metaUtils.validateAndProcessValueFor(meta, inheritedField.fieldName, lookupRecord[inheritedField.fieldName], actionType, model, objectOriginalValues, objectNewValues, idsToUpdate);
 				if (validation === undefined) {
 					validation = null;
 				}
@@ -70,20 +40,11 @@ lookupUtils.copyDescriptionAndInheritedFields = function(
 					return validation;
 				}
 				objectNewValues[inheritedField.fieldName] = validation;
-			} else {
-				//until_edited, once_editable
 
-				if (objectOriginalValues[inheritedField.fieldName] == null) {
-					validation = metaUtils.validateAndProcessValueFor(
-						meta,
-						inheritedField.fieldName,
-						lookupRecord[inheritedField.fieldName],
-						actionType,
-						model,
-						objectOriginalValues,
-						objectNewValues,
-						idsToUpdate
-					);
+			} else { //until_edited, once_editable
+
+				if ((objectOriginalValues[inheritedField.fieldName] == null)) {
+					validation = metaUtils.validateAndProcessValueFor(meta, inheritedField.fieldName, lookupRecord[inheritedField.fieldName], actionType, model, objectOriginalValues, objectNewValues, idsToUpdate);
 					if (validation instanceof Error) {
 						return validation;
 					}
@@ -94,13 +55,14 @@ lookupUtils.copyDescriptionAndInheritedFields = function(
 	}
 };
 
+
 lookupUtils.removeInheritedFields = function(lookupField, objectNewValues) {
 	if (_.isArray(lookupField.inheritedFields)) {
 		return (() => {
 			const result = [];
 			for (let inheritedField of Array.from(lookupField.inheritedFields)) {
 				if (['always', 'hierarchy_always'].includes(inheritedField.inherit)) {
-					result.push((objectNewValues[inheritedField.fieldName] = null));
+					result.push(objectNewValues[inheritedField.fieldName] = null);
 				} else {
 					result.push(undefined);
 				}

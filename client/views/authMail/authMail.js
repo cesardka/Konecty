@@ -29,7 +29,6 @@ Template.authMail.helpers({
 Template.authMail.events({
 	'click button.authorize'(event, instance) {
 		const user = Meteor.user();
-
 		const loginConfig = {
 			requestPermissions: ['https://mail.google.com/'],
 			requestOfflineToken: true,
@@ -40,9 +39,13 @@ Template.authMail.events({
 
 		if (__guard__(user.emails != null ? user.emails[0] : undefined, x => x.address) != null) {
 			loginConfig.userEmail = user.emails[0].address;
-		}
 
-		return Meteor.loginWithGoogle(loginConfig);
+			return Meteor.loginWithGoogle(loginConfig, function(err) {
+				if (err) {
+					return console.log(`error : ${err.message}`);
+				}
+			});
+		}
 	},
 
 		// params =
