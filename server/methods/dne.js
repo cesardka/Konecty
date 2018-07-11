@@ -9,21 +9,33 @@ const connection = {};
 
 const getUtilDb = function() {
 	const Mongodb = MongoInternals.NpmModule;
-	const { Db } = Mongodb;
+	const { MongoClient } = Mongodb;
 	const { Server } = Mongodb;
 
 	let host = process.env.MONGO_URL.replace('mongodb://', '');
-	const hostPort = host.split('/').shift().split(':');
+	const hostPort = host
+		.split('/')
+		.shift()
+		.split(':');
 
 	host = hostPort[0];
 	const port = hostPort[1] || 27017;
 
-	const server = new Server(host, port, {auto_reconnect: true, poolSize: 2});
-	const db_connection = new Db('utils', server, {w:0, native_parser: false});
+	var mongoClient = new MongoClient(
+		new Server(host, port, { auto_reconnect: true, poolSize: 2 })
+	);
 
-	return db_connection.open((err, db) => connection.db = db);
+	mongoClient.connect((err, mongoClient) => {
+		connection.db = mongoClient.db('utils');
+		mongoClient.close();
+	});
+
+	// const server = new Server(host, port, { auto_reconnect: true, poolSize: 2 });
+
+	// const db_connection = new Db('utils', server, { w: 0, native_parser: false });
+
+	// return db_connection.open((err, db) => (connection.db = db));
 };
-
 
 getUtilDb();
 
@@ -47,8 +59,7 @@ Meteor.methods({
 	DNE_CEP_List(cep) {
 		const placeCollection = connection.db.collection('utils.address.BRA.place');
 
-		let query =
-			{postalCode: cep};
+		let query = { postalCode: cep };
 
 		let options = {
 			fields: {
@@ -89,12 +100,11 @@ Meteor.methods({
 
 			return results;
 
-		// If results are not found on places collection, look for them on city collection
+			// If results are not found on places collection, look for them on city collection
 		} else {
 			const cityCollection = connection.db.collection('utils.address.BRA.city');
 
-			query =
-				{postalCode: cep};
+			query = { postalCode: cep };
 
 			options = {
 				fields: {
@@ -122,8 +132,7 @@ Meteor.methods({
 	DNE_City_List(state, city) {
 		const cityCollection = connection.db.collection('utils.address.BRA.city');
 
-		const query =
-			{state};
+		const query = { state };
 
 		if (city !== '*') {
 			query.city = new RegExp(accentToRegex(city), 'i');
@@ -153,10 +162,11 @@ Meteor.methods({
 	},
 
 	DNE_District_List(state, city, district) {
-		const districtCollection = connection.db.collection('utils.address.BRA.district');
+		const districtCollection = connection.db.collection(
+			'utils.address.BRA.district'
+		);
 
-		let query =
-			{state};
+		let query = { state };
 
 		if (district !== '*') {
 			query.district = new RegExp(accentToRegex(district), 'i');
@@ -188,10 +198,11 @@ Meteor.methods({
 		// Get local ditricts
 		if (Models['AddressPlace'] != null) {
 			const districts = [];
-			for (let result of Array.from(results)) { districts.push(result.district); }
+			for (let result of Array.from(results)) {
+				districts.push(result.district);
+			}
 
-			query =
-				{state};
+			query = { state };
 
 			if (city !== '*') {
 				query.city = city;
@@ -199,14 +210,14 @@ Meteor.methods({
 
 			if (district !== '*') {
 				query.$and = [
-					{startNeighbourhood: new RegExp(accentToRegex(district), 'i')},
-					{startNeighbourhood: {$nin: districts}}
+					{ startNeighbourhood: new RegExp(accentToRegex(district), 'i') },
+					{ startNeighbourhood: { $nin: districts } }
 				];
 			} else {
-				query.startNeighbourhood = {$nin: districts};
+				query.startNeighbourhood = { $nin: districts };
 			}
 
-			const match = {$match: query};
+			const match = { $match: query };
 
 			const group = {
 				$group: {
@@ -215,14 +226,18 @@ Meteor.methods({
 						state: '$state',
 						startNeighbourhood: '$startNeighbourhood'
 					},
-					district: { $first: '$startNeighbourhood'
-				},
-					postalCode: { $first: '$postalCode'
-				},
-					city: { $first: '$city'
-				},
-					state: { $first: '$state'
-				}
+					district: {
+						$first: '$startNeighbourhood'
+					},
+					postalCode: {
+						$first: '$postalCode'
+					},
+					city: {
+						$first: '$city'
+					},
+					state: {
+						$first: '$state'
+					}
 				}
 			};
 
@@ -274,22 +289,22 @@ Meteor.methods({
 			query.place = new RegExp(accentToRegex(place), 'i');
 		}
 
-		if ((number != null) && (number !== '*') && /^\d+$/.test(number)) {
+		if (number != null && number !== '*' && /^\d+$/.test(number)) {
 			number = parseInt(number);
 
-			query['$and'] = [ 
-				{ $or: [ { init: { $exists: 0 } }, { init: { $lte: number } } ] },
-				{ $or: [ { end: { $exists: 0 } }, { end: { $gte: number } } ] }
+			query['$and'] = [
+				{ $or: [{ init: { $exists: 0 } }, { init: { $lte: number } }] },
+				{ $or: [{ end: { $exists: 0 } }, { end: { $gte: number } }] }
 			];
-			
-			if ((number % 2) === 0) {
+
+			if (number % 2 === 0) {
 				query.even = true;
 			} else {
 				query.odd = true;
 			}
 		}
 
-		const match = {$match: query};
+		const match = { $match: query };
 
 		const group = {
 			$group: {
@@ -298,22 +313,30 @@ Meteor.methods({
 					state: '$state',
 					place: '$place'
 				},
-				district: { $first: '$startNeighbourhood'
-			},
-				postalCode: { $addToSet: '$postalCode'
-			},
-				placeType: { $first: '$placeType'
-			},
-				init: { $min: '$init'
-			},
-				end: { $max: '$end'
-			},
-				city: { $first: '$city'
-			},
-				state: { $first: '$state'
-			},
-				place: { $first: '$place'
-			}
+				district: {
+					$first: '$startNeighbourhood'
+				},
+				postalCode: {
+					$addToSet: '$postalCode'
+				},
+				placeType: {
+					$first: '$placeType'
+				},
+				init: {
+					$min: '$init'
+				},
+				end: {
+					$max: '$end'
+				},
+				city: {
+					$first: '$city'
+				},
+				state: {
+					$first: '$state'
+				},
+				place: {
+					$first: '$place'
+				}
 			}
 		};
 
@@ -339,15 +362,18 @@ Meteor.methods({
 
 		const pipeline = [match, group, project, sort];
 
-		if (limit != null) { 
+		if (limit != null) {
 			if (_.isString(limit) && /^l:[1-9]\d*$/.test(limit)) {
-				pipeline.push({$limit: parseInt(limit.split(':').pop())});
+				pipeline.push({ $limit: parseInt(limit.split(':').pop()) });
 			} else if (_.isNumber(limit)) {
-				pipeline.push({$limit: limit});
+				pipeline.push({ $limit: limit });
 			}
 		}
 
-		const aggregate = Meteor.wrapAsync(placeCollection.aggregate, placeCollection);
+		const aggregate = Meteor.wrapAsync(
+			placeCollection.aggregate,
+			placeCollection
+		);
 
 		let results = aggregate(pipeline);
 
@@ -363,7 +389,9 @@ Meteor.methods({
 		}
 
 		for (let result of Array.from(results)) {
-			if ((result.postalCode != null ? result.postalCode.length : undefined) === 1) {
+			if (
+				(result.postalCode != null ? result.postalCode.length : undefined) === 1
+			) {
 				result.postalCode = result.postalCode[0];
 			}
 		}
