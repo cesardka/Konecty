@@ -1,90 +1,183 @@
 import http from 'request';
 import qs from 'querystring';
+import _ from 'lodash';
+import moment from 'moment';
 
-let requestOptions = {
-    headers: {
-        'X-Auth-Token': null,
-        'X-User-Id': null
-    }
-};
-
-const createDepartment = function(data){
-    const department = {
-        "enabled": data.active,
-        "showOnRegistration": true,
-        "name": data.name,
-        "description": ""
-    };
-    
-    requestOptions.url = Namespace.RocketChat.host + '/api/v1/livechat/department';
-    
-    console.log('[ROCKET.CHAT INTEGRATION] trying to create department '+ data.name).green();
-    http.post(requestOptions, function(e, r, body){
-        const data = qs.parse(body);
-        if (data.success){
-            console.log('[ROCKET.CHAT INTEGRATION] new department '+ data.name).green();
-        }else{
-            console.log('[ROCKET.CHAT INTEGRATION] Error '+JSON.stringify(data)).red();
-        }
-    });
-};
-const  updateDepartment = function(data, department_id){
-    const department = {
-        "enabled": data.active,
-        "showOnRegistration": true,
-        "name": data.name,
-        "description": ""
-    };
-
-    requestOptions.url = Namespace.RocketChat.host + '/api/v1/livechat/department/'+department_id;
-
-    console.log('[ROCKET.CHAT INTEGRATION] trying to update department '+ data.name).green();
-    http.put(requestOptions, function(e, r, body){
-        const data = qs.parse(body);
-        if (data.success){
-            console.log('[ROCKET.CHAT INTEGRATION] update department '+ data.name).green();
-        }else{
-            console.log('[ROCKET.CHAT INTEGRATION] Error '+JSON.stringify(data)).red();
-        }
-    });
-};
-
-const removeDepartment = function( department_id ){
-    requestOptions.url = Namespace.RocketChat.host + '/api/v1/livechat/department/'+department_id;
-
-    console.log('[ROCKET.CHAT INTEGRATION] trying to remove department '+ data.name).green();
-    http.delete(requestOptions, function(e, r, body){
-        const data = qs.parse(body);
-        if (data.success){
-            console.log('[ROCKET.CHAT INTEGRATION] remove department '+ data.name).green();
-        }else{
-            console.log('[ROCKET.CHAT INTEGRATION] Error '+JSON.stringify(data)).red();
-        }
-    });
-};
-
-const  getDepartments = function(){
-    requestOptions.url = Namespace.RocketChat.host + '/api/v1/livechat/department';
-
-    http.get(requestOptions, function(e, r, body){
+const getDepartments = function(fnCallback){
+    http.get(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department'), function(e, r, body){
         var data = qs.parse(body);
-        callback(data);
+        fnCallback(data.departments);
     });
 }
 
+const confRequest = function(url, data){
+    const user = Meteor.user();
+    const token = _.find(user.services.resume.loginTokens, function(token){
+        return moment(token.when).valueOf() >= moment().valueOf(); 
+    });
+    return {
+        headers: {
+        'X-Auth-Token': token.hashedToken,
+        'X-User-Id': user._id
+        },
+        uri: url,
+        body: data,
+        json: true
+    };
+}
+
+const syncAgents = function(queue, department){
+    const user = Meteor.users.findOne(Namespace.RocketChat.userIdCreateDepartaments);
+    _.forEach(department.agents, function(agent){
+        let userAgent = Models.user.findOne(agent._id);
+        if (userAgent !== undefined){
+            console.log('[ROCKET.CHAT INTEGRATION] insert agent ' + queue.name + ' for queue ' + department._id + ' in QueueUsers');
+            Models.QueueUsers.insert({
+                count: agent.count,
+                order:agent.order,
+                queue:{
+                    _id: queue._id,
+                    name: queue.name
+                },
+                type: "Chat",
+                status:"Active",
+                user: userAgent,
+                _user: user,
+                _createdAt: new Date(),
+                _createdBy:  {
+                    _id: user._id,
+                    name: user.name,
+                    group: user.group
+                },
+                _updatedAt: new Date(),
+                _updatedBy:  {
+                    _id: user._id,
+                    name: user.name,
+                    group: user.group
+                }
+            });
+        }
+    });
+}
 
 /**
  *
  *  
  **/ 
 Meteor.methods({
-    syncDepartment: function(queue, queueUsers){
-        var user = Meteor.user();
-        requestOptions.headers = {
-            'X-Auth-Token': user.services.password.bcrypt,
-            'X-User-Id': user._id
-        };
+    syncRocketChatDepartmentAndAgents: function(){
+        const queues = Models.Queue.findAll();
+        const user = Meteor.users.findOne(Namespace.RocketChat.userIdCreateDepartaments);
+        getDepartments(function(departments){
+            _.forEach(departments, function(d){
+                const queue = _.find(queues, function(q){
+                    return d.name === q.name
+                });
 
-        
+                if (queue === undefined) {
+                    console.log('[ROCKET.CHAT INTEGRATION] insert queue ' + q.name + ' for department _id ' + d._id);
+                    Models.Queue.insert({
+                        _user: user,
+                        active: d.enabled,
+                        currentPosition:1,
+                        rocketchat_id: d._id,
+                        name: d.name,
+                        _createdAt: new Date(),
+                        _createdBy:  {
+                            _id: user._id,
+                            name: user.name,
+                            group: user.group
+                        },
+                        _updatedAt: new Date(),
+                        _updatedBy:  {
+                            _id: user._id,
+                            name: user.name,
+                            group: user.group
+                        }
+                    }, function(error, queue_id){
+                        syncAgents({
+                            _id:queue_id,
+                            name: queue.name
+                        }, d)
+                    });
+
+                }else if (queue.rocketchat_id === undefined) {
+                    console.log('[ROCKET.CHAT INTEGRATION] update queue ' + queue.name + ' with department _id ' + d._id);
+                    Models.Queue(queue._id, { $set: { rocketchat_id: d._id } });
+                    syncAgents(queue, d);
+                }                
+            });
+        });
+    },
+    createRocketChatDepartment: function(queue){
+        const department = {
+            "enabled": queue.active, 
+            "name": queue.name,
+            "description": _.get(queue, 'description', '')
+        };
+        console.log('[ROCKET.CHAT INTEGRATION] trying to create department '+ queue.name);
+        http.post(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department', department), function(e, r, body){
+            const data = qs.parse(body);
+            if (data.success){
+                console.log('[ROCKET.CHAT INTEGRATION] new department '+ data.name);
+                console.log('[ROCKET.CHAT INTEGRATION] update queue ' + queue.name + ' with department _id ' + data._id);
+                Models.Queue(queue._id, { $set: { rocketchat_id: data.department._id } });
+            }else{
+                console.log('[ROCKET.CHAT INTEGRATION] Error '+JSON.stringify(data));
+            }
+        });
+    },
+    updateRocketChatDepartment: function(queue, department_id){
+        const department = {
+            "enabled": queue.active,
+            "name": queue.name,
+            "description": _.get(queue, 'description', '')
+        };
+        console.log('[ROCKET.CHAT INTEGRATION] trying to update department '+ queue.name);
+        http.put(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department/'+department_id, queue), function(e, r, body){
+            const data = qs.parse(body);
+            if (data.success){
+                console.log('[ROCKET.CHAT INTEGRATION] update department '+ data.name);
+            }else{
+                console.log('[ROCKET.CHAT INTEGRATION] Error ' + JSON.stringify(data));
+            }
+        });
+    },
+    removeRocketChatDepartment: function( department_id ){
+        console.log('[ROCKET.CHAT INTEGRATION] trying to remove department '+ data.name);
+        http.delete(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department/'+department_id) , function(e, r, body){
+            const data = qs.parse(body);
+            if (data.success){
+                console.log('[ROCKET.CHAT INTEGRATION] remove department '+ data.name);
+            }else{
+                console.log('[ROCKET.CHAT INTEGRATION] Error '+JSON.stringify(data));
+            }
+        });
+    },
+    syncRocketChatAgents: function(queue_id){
+        const user = Meteor.users.findOne(Namespace.RocketChat.userIdCreateDepartaments);
+        const queue = Meteor.Queue.findOne(queue_id);
+        const queueUsers = Meteor.QueueUsers({ "queue._id" : queue_id });
+        const agents = _.map(queueUsers, function(queueUser){
+            return {
+                "agentId": queueUser.user._id,
+                "username": queueUser.user.name,
+                "count": queueUser.count,
+                "order": queueUser.order
+            };
+        });
+        if (agents.length === 0){
+            console.log('[ROCKET.CHAT INTEGRATION] unknow error on update agents in department '+ queue.name);
+        }else{
+            console.log('[ROCKET.CHAT INTEGRATION] trying to update agents in department '+ queue.name);
+            http.put(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department/'+queue.rocketchat_id, { "agents": agents}), function(e, r, body){
+                const data = qs.parse(body);
+                if (data.success){
+                    console.log('[ROCKET.CHAT INTEGRATION] update department '+ data.name);
+                }else{
+                    console.log('[ROCKET.CHAT INTEGRATION] Error ' + JSON.stringify(data));
+                }
+            });
+        }
     }
 });

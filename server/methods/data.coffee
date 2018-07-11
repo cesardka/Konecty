@@ -818,6 +818,15 @@ Meteor.registerMethod 'data:create', 'withUser', 'withAccessForDocument', 'ifAcc
 	else
 		delete response.errors
 
+	#Call integrations with rocket
+	if response.success and Namespace.RocketChat?.syncDepartments and request.document == 'Queue'
+		console.log JSON.stringify request
+		Meteor.call "createRocketChatDepartment", insertedRecord
+		
+	if response.success and Namespace.RocketChat?.syncDepartments and request.document == 'QueueUser'
+		console.log JSON.stringify request
+		Meteor.call "syncRocketChatAgents", insertedRecord.queue._id
+
 	# And finally, send the response
 	return response
 
@@ -1161,11 +1170,21 @@ Meteor.registerMethod 'data:update', 'withUser', 'withAccessForDocument', 'ifAcc
 		for updatedRecord in updatedRecords
 			response.data.push accessUtils.removeUnauthorizedDataForRead @access, updatedRecord
 
+
 	# If there are errors then set success of response as false, else delete the key errors
 	if response.errors.length > 0
 		response.success = false
 	else
 		delete response.errors
+
+	#Call integrations with rocket
+	if response.success and Namespace.RocketChat?.syncDepartments and request.document == 'Queue'
+		console.log JSON.stringify request
+		Meteor.call "updateRocketChatDepartment", updatedRecord
+		
+	if response.success and Namespace.RocketChat?.syncDepartments and request.document == 'QueueUser'
+		console.log JSON.stringify request
+		Meteor.call "syncRocketChatAgents", updatedRecord.queue._id
 
 	# And finally, send the response
 	return response
@@ -1430,6 +1449,11 @@ Meteor.registerMethod 'data:delete', 'withUser', 'withAccessForDocument', 'ifAcc
 		response.success = false
 	else
 		delete response.errors
+
+	#Call integrations with rocket
+	if response.success and Namespace.RocketChat?.syncDepartments and request.document == 'Queue'
+		console.log JSON.stringify request
+		Meteor.call "removeRocketChatDepartment", idsToDelete
 
 	# And finally, send the response
 	return response
