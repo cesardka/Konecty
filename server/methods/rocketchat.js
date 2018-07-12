@@ -4,26 +4,43 @@ import _ from 'lodash';
 import moment from 'moment';
 
 const getDepartments = function(fnCallback){
-    http.get(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department'), function(e, r, body){
+    http(confRequest('GET', Namespace.RocketChat.host + '/api/v1/livechat/department'), function(e, r, body){
         var data = qs.parse(body);
         fnCallback(data.departments);
     });
 }
 
-const confRequest = function(url, data){
+const confRequest = async function(method, url, data){
     const user = Meteor.user();
+    const today = moment().seconds(0).minutes(0).hour(0).valueOf();
     const token = _.find(user.services.resume.loginTokens, function(token){
-        return moment(token.when).valueOf() >= moment().valueOf(); 
+        return moment(token.when).valueOf() >= today;
     });
-    return {
+
+    let login = undefined;
+    try {
+        login = await http({
+            url: Namespace.RocketChat.host + "/api/v1/login",
+            method: "POST",
+            data: {"user": namespace.RocketChat.username, "password": namespace.RocketChat.password},
+            json:true
+        });
+    }catch(e){
+        console.log('[ROCKET.CHAT INTEGRATION] error login in rocket ' + JSON.stringify(e));        
+    }
+
+    return _.merge({
+        method: method,
         headers: {
-        'X-Auth-Token': token.hashedToken,
-        'X-User-Id': user._id
+            'X-Auth-Token': login.data.authToken,
+            'X-User-Id': login.data.userId
         },
-        uri: url,
+        url: url
+    }, data !== undefined ? {
         body: data,
         json: true
-    };
+    } : {});
+
 }
 
 const syncAgents = function(queue, department){
@@ -39,8 +56,8 @@ const syncAgents = function(queue, department){
                     _id: queue._id,
                     name: queue.name
                 },
-                type: "Chat",
-                status:"Active",
+                type: ["Chat"],
+                status: true,
                 user: userAgent,
                 _user: user,
                 _createdAt: new Date(),
@@ -66,7 +83,7 @@ const syncAgents = function(queue, department){
  **/ 
 Meteor.methods({
     syncRocketChatDepartmentAndAgents: function(){
-        const queues = Models.Queue.findAll();
+        const queues = Models.Queue.findAll({ type: { "$in": ["Chat"] }});
         const user = Meteor.users.findOne(Namespace.RocketChat.userIdCreateDepartaments);
         getDepartments(function(departments){
             _.forEach(departments, function(d){
@@ -116,7 +133,7 @@ Meteor.methods({
             "description": _.get(queue, 'description', '')
         };
         console.log('[ROCKET.CHAT INTEGRATION] trying to create department '+ queue.name);
-        http.post(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department', department), function(e, r, body){
+        http(confRequest('POST', Namespace.RocketChat.host + '/api/v1/livechat/department', department), function(e, r, body){
             const data = qs.parse(body);
             if (data.success){
                 console.log('[ROCKET.CHAT INTEGRATION] new department '+ data.name);
@@ -124,6 +141,8 @@ Meteor.methods({
                 Models.Queue(queue._id, { $set: { rocketchat_id: data.department._id } });
             }else{
                 console.log('[ROCKET.CHAT INTEGRATION] Error '+JSON.stringify(data));
+                console.log('[ROCKET.CHAT INTEGRATION] Error '+JSON.stringify(e));
+                console.log('[ROCKET.CHAT INTEGRATION] Error '+JSON.stringify(r));
             }
         });
     },
@@ -134,7 +153,7 @@ Meteor.methods({
             "description": _.get(queue, 'description', '')
         };
         console.log('[ROCKET.CHAT INTEGRATION] trying to update department '+ queue.name);
-        http.put(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department/'+department_id, queue), function(e, r, body){
+        http(confRequest('PUT',Namespace.RocketChat.host + '/api/v1/livechat/department/'+department_id, queue), function(e, r, body){
             const data = qs.parse(body);
             if (data.success){
                 console.log('[ROCKET.CHAT INTEGRATION] update department '+ data.name);
@@ -145,7 +164,7 @@ Meteor.methods({
     },
     removeRocketChatDepartment: function( department_id ){
         console.log('[ROCKET.CHAT INTEGRATION] trying to remove department '+ data.name);
-        http.delete(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department/'+department_id) , function(e, r, body){
+        http(confRequest('DELETE', Namespace.RocketChat.host + '/api/v1/livechat/department/'+department_id) , function(e, r, body){
             const data = qs.parse(body);
             if (data.success){
                 console.log('[ROCKET.CHAT INTEGRATION] remove department '+ data.name);
@@ -170,7 +189,7 @@ Meteor.methods({
             console.log('[ROCKET.CHAT INTEGRATION] unknow error on update agents in department '+ queue.name);
         }else{
             console.log('[ROCKET.CHAT INTEGRATION] trying to update agents in department '+ queue.name);
-            http.put(confRequest(Namespace.RocketChat.host + '/api/v1/livechat/department/'+queue.rocketchat_id, { "agents": agents}), function(e, r, body){
+            http(confRequest('PUT', Namespace.RocketChat.host + '/api/v1/livechat/department/'+queue.rocketchat_id, { "agents": agents}), function(e, r, body){
                 const data = qs.parse(body);
                 if (data.success){
                     console.log('[ROCKET.CHAT INTEGRATION] update department '+ data.name);
