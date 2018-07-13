@@ -1,15 +1,15 @@
-FROM node:4.8-stretch
+FROM node:8.11-stretch
 
-ENV KONECTY_VERSION 1.0.25
+ENV KONECTY_VERSION 1.0.29-dev
 
 RUN set -x \
- && curl -SLf "https://github.com/Konecty/Konecty/releases/download/$KONECTY_VERSION/Konecty.tar.gz" -o Konecty.tar.gz \
- && mkdir /app \
- && tar -zxf Konecty.tar.gz -C /app \
- && rm Konecty.tar.gz \
- && cd /app/bundle/programs/server/ \
- && npm install \
- && npm cache clear
+    && curl -SLf "https://github.com/Konecty/Konecty/releases/download/$KONECTY_VERSION/Konecty.tar.gz" -o Konecty.tar.gz \
+    && mkdir /app \
+    && tar -zxf Konecty.tar.gz -C /app \
+    && rm Konecty.tar.gz \
+    && cd /app/bundle/programs/server/ \
+    && npm install \
+    && npm cache clear
 
 WORKDIR /app/bundle
 
