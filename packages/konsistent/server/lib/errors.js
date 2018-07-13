@@ -7,20 +7,29 @@
  */
 const bugsnag = Npm.require('bugsnag');
 
-process.env.dbName = process.env.MONGO_URL.split('/').pop();
+process.env.dbName =
+	process.env.DB_NAME || process.env.MONGO_URL.split('/').pop();
 
 bugsnag.register('e6464a5423ceea7cb3b5b7ee8731f0fb');
 
 class KonectyError extends Error {
 	constructor(msg, options) {
 		{
-		  // Hack: trick Babel/TypeScript into allowing this before super.
-		  if (false) { super(); }
-		  let thisFn = (() => { return this; }).toString();
-		  let thisName = thisFn.slice(thisFn.indexOf('return') + 6 + 1, thisFn.indexOf(';')).trim();
-		  eval(`${thisName} = this;`);
+			// Hack: trick Babel/TypeScript into allowing this before super.
+			if (false) {
+				super();
+			}
+			let thisFn = (() => {
+				return this;
+			}).toString();
+			let thisName = thisFn
+				.slice(thisFn.indexOf('return') + 6 + 1, thisFn.indexOf(';'))
+				.trim();
+			eval(`${thisName} = this;`);
 		}
-		if (options == null) { options = {}; }
+		if (options == null) {
+			options = {};
+		}
 		this.message = msg;
 		for (let key in options) {
 			const value = options[key];
@@ -34,11 +43,17 @@ global.KonectyError = KonectyError;
 class ErrorWithCode extends Error {
 	constructor(code, msg) {
 		{
-		  // Hack: trick Babel/TypeScript into allowing this before super.
-		  if (false) { super(); }
-		  let thisFn = (() => { return this; }).toString();
-		  let thisName = thisFn.slice(thisFn.indexOf('return') + 6 + 1, thisFn.indexOf(';')).trim();
-		  eval(`${thisName} = this;`);
+			// Hack: trick Babel/TypeScript into allowing this before super.
+			if (false) {
+				super();
+			}
+			let thisFn = (() => {
+				return this;
+			}).toString();
+			let thisName = thisFn
+				.slice(thisFn.indexOf('return') + 6 + 1, thisFn.indexOf(';'))
+				.trim();
+			eval(`${thisName} = this;`);
 		}
 		this.message = msg;
 		this.code = code;
@@ -62,9 +77,9 @@ NotifyErrors.notify = function(type, message, options) {
 	return bugsnag.notify(message, options);
 };
 
-
-process.on('uncaughtException', error => NotifyErrors.notify('uncaughtException', error));
-
+process.on('uncaughtException', error =>
+	NotifyErrors.notify('uncaughtException', error)
+);
 
 const originalMeteorDebug = Meteor._debug;
 Meteor._debug = function(message, stack) {

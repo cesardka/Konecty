@@ -12,18 +12,19 @@ const getUtilDb = function() {
 	const { MongoClient } = Mongodb;
 	const { Server } = Mongodb;
 
-	let host = process.env.MONGO_URL.replace('mongodb://', '');
-	const hostPort = host
-		.split('/')
-		.shift()
-		.split(':');
+	// let host = process.env.MONGO_URL.replace('mongodb://', '');
+	// const hostPort = host
+	// 	.split('/')
+	// 	.shift()
+	// 	.split(':');
 
-	host = hostPort[0];
-	const port = hostPort[1] || 27017;
+	// host = hostPort[0];
+	// const port = hostPort[1] || 27017;
 
-	var mongoClient = new MongoClient(
-		new Server(host, port, { auto_reconnect: true, poolSize: 2 })
-	);
+	var mongoClient = new MongoClient(process.env.MONGO_URL, {
+		auto_reconnect: true,
+		poolSize: 2
+	});
 
 	mongoClient.connect((err, mongoClient) => {
 		connection.db = mongoClient.db('utils');

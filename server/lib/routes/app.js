@@ -17,7 +17,8 @@ const bugsnag = require('bugsnag');
 const REQ_TIMEOUT = 1000 * 300;
 const RES_TIMEOUT = 1000 * 300;
 
-process.env.dbName = process.env.MONGO_URL.split('/').pop();
+process.env.dbName =
+	process.env.DB_NAME || process.env.MONGO_URL.split('/').pop();
 console.log(`[kondata] === ${process.env.dbName} ===`.green);
 
 bugsnag.register('3aff690ae2254498bb9a88dcf8bbb211');
@@ -30,7 +31,7 @@ if (basePath.indexOf('bundle/programs/server') > 0) {
 
 global.logAllRequests = false;
 
-process.on("SIGUSR2", function() {
+process.on('SIGUSR2', function() {
 	global.logAllRequests = !global.logAllRequests;
 	if (global.logAllRequests === true) {
 		return console.log('Log all requests ENABLED'.green);
@@ -41,8 +42,8 @@ process.on("SIGUSR2", function() {
 
 Picker.middleware(function(req, res, next) {
 	let data = '';
-	req.on('data', chunk => data += chunk);
-	req.on('end', () => req.rawBody = data);
+	req.on('data', chunk => (data += chunk));
+	req.on('end', () => (req.rawBody = data));
 	return next();
 });
 
@@ -50,16 +51,21 @@ Picker.middleware(cookieParser());
 
 var convertObjectIdsToOid = function(values) {
 	if (_.isArray(values)) {
-		values.forEach((item, index) => values[index] = convertObjectIdsToOid(item));
+		values.forEach(
+			(item, index) => (values[index] = convertObjectIdsToOid(item))
+		);
 		return values;
 	}
 
 	if (_.isObject(values)) {
 		if (values instanceof Date) {
-			return {$date: values.toISOString(), pog: undefined};
+			return { $date: values.toISOString(), pog: undefined };
 		}
 
-		_.each(values, (value, key) => values[key] = convertObjectIdsToOid(value));
+		_.each(
+			values,
+			(value, key) => (values[key] = convertObjectIdsToOid(value))
+		);
 		return values;
 	}
 
@@ -82,25 +88,29 @@ Picker.middleware(function(req, res, next) {
 		}
 
 		options.user = {
-			_id: __guard__(req.user != null ? req.user._id : undefined, x => x.valueOf()),
-			name: (req.user != null ? req.user.name : undefined),
-			login: (req.user != null ? req.user.username : undefined),
-			email: (req.user != null ? req.user.emails : undefined),
-			access: (req.user != null ? req.user.access : undefined),
-			lastLogin: (req.user != null ? req.user.lastLogin : undefined)
+			_id: __guard__(req.user != null ? req.user._id : undefined, x =>
+				x.valueOf()
+			),
+			name: req.user != null ? req.user.name : undefined,
+			login: req.user != null ? req.user.username : undefined,
+			email: req.user != null ? req.user.emails : undefined,
+			access: req.user != null ? req.user.access : undefined,
+			lastLogin: req.user != null ? req.user.lastLogin : undefined
 		};
 		options.session = {
-			_id: __guard__(req.session != null ? req.session._id : undefined, x1 => x1.valueOf()),
-			_createdAt: (req.session != null ? req.session._createdAt : undefined),
-			ip: (req.session != null ? req.session.ip : undefined),
-			geolocation: (req.session != null ? req.session.geolocation : undefined),
-			expireAt: (req.session != null ? req.session.expireAt : undefined)
+			_id: __guard__(req.session != null ? req.session._id : undefined, x1 =>
+				x1.valueOf()
+			),
+			_createdAt: req.session != null ? req.session._createdAt : undefined,
+			ip: req.session != null ? req.session.ip : undefined,
+			geolocation: req.session != null ? req.session.geolocation : undefined,
+			expireAt: req.session != null ? req.session.expireAt : undefined
 		};
 
 		return NotifyErrors.notify(type, message, options);
 	};
 
-	req.set = (header, value) => req.headers[header.toLowerCase()] = value;
+	req.set = (header, value) => (req.headers[header.toLowerCase()] = value);
 
 	req.get = header => req.headers[header.toLowerCase()];
 
@@ -145,10 +155,11 @@ Picker.middleware(function(req, res, next) {
 
 			response = {
 				success: false,
-				errors: [{
-					message: response.message,
-					bugsnag: false
-				}
+				errors: [
+					{
+						message: response.message,
+						bugsnag: false
+					}
 				]
 			};
 
@@ -163,8 +174,7 @@ Picker.middleware(function(req, res, next) {
 				if (_.isArray(response.errors)) {
 					for (let index = 0; index < response.errors.length; index++) {
 						const error = response.errors[index];
-						response.errors[index] =
-							{message: error.message};
+						response.errors[index] = { message: error.message };
 					}
 				}
 			}
@@ -176,13 +186,13 @@ Picker.middleware(function(req, res, next) {
 			response = EJSON.stringify(convertObjectIdsToOid(response));
 		}
 
-		if ((status !== 200) || (res.hasErrors === true)) {
+		if (status !== 200 || res.hasErrors === true) {
 			console.log(status, response);
 		}
 
 		res.statusCode = status;
 
-		if ((response == null)) {
+		if (response == null) {
 			return res.end();
 		}
 
@@ -194,7 +204,7 @@ Picker.middleware(function(req, res, next) {
 
 		const renderedHtml = tmpl(data);
 
-		res.writeHead(200, {'Content-Type': 'text/html'});
+		res.writeHead(200, { 'Content-Type': 'text/html' });
 		return res.end(renderedHtml);
 	};
 
@@ -203,16 +213,22 @@ Picker.middleware(function(req, res, next) {
 	res.end = function() {
 		resEnd.apply(res, arguments);
 
-		if (res.statusCode == null) { res.statusCode = 200; }
+		if (res.statusCode == null) {
+			res.statusCode = 200;
+		}
 
 		// Log API Calls
-		let log = `-> ${res.statusCode} ${utils.rpad(req.method, 4).bold} ${req.url} (${req.time}) ${(req.headers.host != null ? req.headers.host.grey : undefined)} ${(req.headers.referer != null ? req.headers.referer.grey : undefined)}`;
+		let log = `-> ${res.statusCode} ${utils.rpad(req.method, 4).bold} ${
+			req.url
+		} (${req.time}) ${
+			req.headers.host != null ? req.headers.host.grey : undefined
+		} ${req.headers.referer != null ? req.headers.referer.grey : undefined}`;
 
-		if ((res.statusCode === 401) && (req.user != null)) {
+		if (res.statusCode === 401 && req.user != null) {
 			log += ` ${req.user._id}`;
 		}
 
-		if ((res.statusCode === 200) && (res.hasErrors !== true)) {
+		if (res.statusCode === 200 && res.hasErrors !== true) {
 			log = log.cyan;
 		} else if (res.statusCode === 500) {
 			log = log.red;
@@ -220,7 +236,11 @@ Picker.middleware(function(req, res, next) {
 			log = log.yellow;
 		}
 
-		if ((global.logAllRequests === true) || (res.statusCode !== 200) || (res.hasErrors === true)) {
+		if (
+			global.logAllRequests === true ||
+			res.statusCode !== 200 ||
+			res.hasErrors === true
+		) {
 			console.log(log);
 			return console.log(JSON.stringify(req.headers));
 		}
@@ -233,10 +253,12 @@ Picker.middleware(function(req, res, next) {
 const pickerGet = Picker.filter((req, res) => req.method === 'GET');
 const pickerPost = Picker.filter((req, res) => req.method === 'POST');
 const pickerPut = Picker.filter((req, res) => req.method === 'PUT');
-const pickerDel = Picker.filter((req, res) => (req.method === 'DELETE') || (req.method === 'DEL'));
+const pickerDel = Picker.filter(
+	(req, res) => req.method === 'DELETE' || req.method === 'DEL'
+);
 
-Picker.middleware( bodyParser.json() );
-Picker.middleware( bodyParser.urlencoded( { extended: true } ) );
+Picker.middleware(bodyParser.json());
+Picker.middleware(bodyParser.urlencoded({ extended: true }));
 
 // Add CORS allowing any origin
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split('|');
@@ -257,28 +279,36 @@ global.app = {
 				const v = params[k];
 				params[k] = _.isString(v) ? decodeURI(v) : v;
 			}
-			if (req.query == null) { req.query = params.query; }
+			if (req.query == null) {
+				req.query = params.query;
+			}
 			req.params = params;
 			return cb(req, res, next);
 		});
 	},
-	post(path, cb) { 
+	post(path, cb) {
 		return pickerPost.route(path, function(params, req, res, next) {
-			if (req.query == null) { req.query = params.query; }
+			if (req.query == null) {
+				req.query = params.query;
+			}
 			req.params = params;
 			return cb(req, res, next);
 		});
 	},
 	put(path, cb) {
 		return pickerPut.route(path, function(params, req, res, next) {
-			if (req.query == null) { req.query = params.query; }
+			if (req.query == null) {
+				req.query = params.query;
+			}
 			req.params = params;
 			return cb(req, res, next);
 		});
 	},
 	del(path, cb) {
 		return pickerDel.route(path, function(params, req, res, next) {
-			if (req.query == null) { req.query = params.query; }
+			if (req.query == null) {
+				req.query = params.query;
+			}
 			req.params = params;
 			return cb(req, res, next);
 		});
@@ -286,5 +316,7 @@ global.app = {
 };
 
 function __guard__(value, transform) {
-  return (typeof value !== 'undefined' && value !== null) ? transform(value) : undefined;
+	return typeof value !== 'undefined' && value !== null
+		? transform(value)
+		: undefined;
 }
