@@ -22,6 +22,7 @@ Konsistent.tailHandle = null;
 
 // Get db name from connection string
 const dbName = process.env.DB_NAME || process.env.MONGO_URL.split('/').pop();
+console.log(`=-=-=-=-= KONSISTENT =-=-=-=-= ${process.env.DB_NAME} =-=-=-=-=`)
 if (
 	_.isEmpty(process.env.DISABLE_KONSISTENT) ||
 	process.env.DISABLE_KONSISTENT === 'false' ||
