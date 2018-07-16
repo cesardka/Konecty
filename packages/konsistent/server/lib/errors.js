@@ -6,9 +6,10 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 const bugsnag = Npm.require('bugsnag');
+const mongodbUri = Npm.require('mongodb-uri');
 
-process.env.dbName =
-	process.env.DB_NAME || process.env.MONGO_URL.split('/').pop();
+const uri = mongodbUri.parse(process.env.MONGO_URL);
+process.env.dbName = uri.database;
 
 bugsnag.register('e6464a5423ceea7cb3b5b7ee8731f0fb');
 

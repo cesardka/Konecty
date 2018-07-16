@@ -10,16 +10,6 @@ const connection = {};
 const getUtilDb = function() {
 	const Mongodb = MongoInternals.NpmModule;
 	const { MongoClient } = Mongodb;
-	const { Server } = Mongodb;
-
-	// let host = process.env.MONGO_URL.replace('mongodb://', '');
-	// const hostPort = host
-	// 	.split('/')
-	// 	.shift()
-	// 	.split(':');
-
-	// host = hostPort[0];
-	// const port = hostPort[1] || 27017;
 
 	var mongoClient = new MongoClient(process.env.MONGO_URL, {
 		auto_reconnect: true,
@@ -30,12 +20,6 @@ const getUtilDb = function() {
 		connection.db = mongoClient.db('utils');
 		mongoClient.close();
 	});
-
-	// const server = new Server(host, port, { auto_reconnect: true, poolSize: 2 });
-
-	// const db_connection = new Db('utils', server, { w: 0, native_parser: false });
-
-	// return db_connection.open((err, db) => (connection.db = db));
 };
 
 getUtilDb();

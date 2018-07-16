@@ -20,9 +20,11 @@ Konsistent.History = {};
 Konsistent.References = {};
 Konsistent.tailHandle = null;
 
+const mongodbUri = Npm.require('mongodb-uri');
+
 // Get db name from connection string
-const dbName = process.env.DB_NAME || process.env.MONGO_URL.split('/').pop();
-console.log(`=-=-=-=-= KONSISTENT =-=-=-=-= ${process.env.DB_NAME} =-=-=-=-=`)
+const uri = mongodbUri.parse(process.env.MONGO_URL);
+const dbName = uri.database;
 if (
 	_.isEmpty(process.env.DISABLE_KONSISTENT) ||
 	process.env.DISABLE_KONSISTENT === 'false' ||
@@ -136,13 +138,10 @@ Konsistent.History.setup = function() {
 		tailable: true
 	});
 
-	console.log('CURSOR DESCRIPTION', cursorDescription);
-
 	return (Konsistent.tailHandle = Konsistent.History.db.tail(
 		cursorDescription,
 		Meteor.bindEnvironment(function(doc) {
 			const ns = doc.ns.split('.');
-			console.log('NEW DOC', doc);
 			return Konsistent.History.processOplogItem(doc);
 		})
 	));

@@ -17,8 +17,11 @@ const bugsnag = require('bugsnag');
 const REQ_TIMEOUT = 1000 * 300;
 const RES_TIMEOUT = 1000 * 300;
 
-process.env.dbName =
-	process.env.DB_NAME || process.env.MONGO_URL.split('/').pop();
+const mongodbUri = Npm.require('mongodb-uri');
+
+const uri = mongodbUri.parse(process.env.MONGO_URL);
+process.env.dbName = uri.database;
+
 console.log(`[kondata] === ${process.env.dbName} ===`.green);
 
 bugsnag.register('3aff690ae2254498bb9a88dcf8bbb211');
