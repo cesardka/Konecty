@@ -5,10 +5,11 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-const ua = require('uap-ref-impl');
+const useragent = require('useragent');
 const bcrypt = require('bcrypt');
 const bcryptHash = Meteor.wrapAsync(bcrypt.hash);
 const bcryptCompare = Meteor.wrapAsync(bcrypt.compare);
+useragent(true);
 
 SSR.compileTemplate(
 	'resetPassword',
@@ -16,10 +17,10 @@ SSR.compileTemplate(
 );
 
 const injectRequestInformation = function(userAgent, session) {
-	const r = ua.parse(userAgent);
+	const r = useragent.parse(userAgent);
 
-	session.browser = r.ua.family;
-	session.browserVersion = r.ua.toVersionString();
+	session.browser = r.family;
+	session.browserVersion = r.toVersion();
 	session.os = r.os.toString();
 	session.platform = r.device.family;
 

@@ -1,6 +1,6 @@
 {
 	"name": "konecty",
-	"version": "1.0.33-dev",
+	"version": "1.0.34-dev",
 	"description": "Konecty",
 	"directories": {
 		"test": "tests"
@@ -25,7 +25,7 @@
 		"path": "^0.12.7",
 		"request": "^2.81.0",
 		"swig": "^1.4.2",
-		"uap-ref-impl": "^0.2.0"
+		"useragent": "^2.3.0"
 	},
 	"devDependencies": {},
 	"scripts": {
