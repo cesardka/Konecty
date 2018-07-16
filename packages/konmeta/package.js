@@ -11,7 +11,8 @@ Package.describe({
 });
 
 Npm.depends({
-	mongodb: '2.2.31'
+	mongodb: '3.1.1',
+	'mongodb-uri': '0.9.7'
 });
 
 Package.onUse(function(api) {

@@ -1,44 +1,44 @@
 {
-  "name": "konecty",
-  "version": "1.0.25",
-  "description": "Konecty",
-  "directories": {
-    "test": "tests"
-  },
-  "dependencies": {
-    "@babel/runtime": "^7.0.0-beta.47",
-    "babel-runtime": "^6.23.0",
-    "bcrypt": "^0.8.7",
-    "body-parser": "^1.17.1",
-    "bugsnag": "^1.10.0",
-    "cheerio": "^1.0.0-rc.1",
-    "colors": "^1.1.2",
-    "cookie-parser": "^1.4.3",
-    "crypto-js": "^3.1.8",
-    "excel4node": "0.0.10",
-    "flat": "^2.0.1",
-    "fs": "^0.0.1-security",
-    "jquery": "^3.2.1",
-    "lodash": "^4.17.10",
-    "moment": "^2.18.1",
-    "mongodb-uri": "^0.9.7",
-    "path": "^0.12.7",
-    "request": "^2.81.0",
-    "swig": "^1.4.2",
-    "ua-parser": "^0.3.5"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "start": "meteor npm start"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:Konecty/Konecty.git"
-  },
-  "author": "Konecty",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Konecty/Konecty/issues"
-  },
-  "homepage": "http://konecty.com"
+	"name": "konecty",
+	"version": "1.0.33-dev",
+	"description": "Konecty",
+	"directories": {
+		"test": "tests"
+	},
+	"dependencies": {
+		"@babel/runtime": "^7.0.0-beta.47",
+		"babel-runtime": "^6.23.0",
+		"bcrypt": "^0.8.7",
+		"body-parser": "^1.17.1",
+		"bugsnag": "^1.10.0",
+		"cheerio": "^1.0.0-rc.1",
+		"colors": "^1.1.2",
+		"cookie-parser": "^1.4.3",
+		"crypto-js": "^3.1.8",
+		"excel4node": "0.0.10",
+		"flat": "^2.0.1",
+		"fs": "^0.0.1-security",
+		"jquery": "^3.2.1",
+		"lodash": "^4.17.10",
+		"moment": "^2.18.1",
+		"mongodb-uri": "^0.9.7",
+		"path": "^0.12.7",
+		"request": "^2.81.0",
+		"swig": "^1.4.2",
+		"uap-ref-impl": "^0.2.0"
+	},
+	"devDependencies": {},
+	"scripts": {
+		"start": "meteor npm start"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:Konecty/Konecty.git"
+	},
+	"author": "Konecty",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/Konecty/Konecty/issues"
+	},
+	"homepage": "http://konecty.com"
 }

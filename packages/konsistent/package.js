@@ -60,5 +60,6 @@ Npm.depends({
 	'swig-email-templates': '5.0.1',
 	bugsnag: '1.5.1',
 	coffeescript: '1.8.0',
-	xoauth2: '1.1.0'
+	xoauth2: '1.1.0',
+	'mongodb-uri': '0.9.7'
 });
